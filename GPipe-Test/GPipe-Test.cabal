@@ -2,17 +2,17 @@ name:                GPipe-Test
 version:             0.1.0.0
 cabal-version:       >=1.10
 build-type:          Simple
-author:              PLR
+author:              copy+paste
 
 executable Main
   hs-source-dirs:      src
   main-is:             Main.hs
   build-depends:
                        base
-                     , transformers
-                     , exception-transformers
                      , GPipe
+                     , transformers
                      , GPipe-GLFW
-                     , GLFW-b
+                     , linear
+                     , JuicyPixels
   ghc-options:         -Wall -threaded
   default-language:    Haskell2010
