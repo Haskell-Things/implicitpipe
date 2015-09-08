@@ -30,8 +30,13 @@ main =
           return $ toPrimitiveArrayInstanced TriangleStrip (,) pArr sideInstances
 
     -- Load image into texture
-    Right (Juicy.ImageYCbCr8 image) <- liftIO $ Juicy.readImage "image.jpg"
-    let size = V2 (Juicy.imageWidth image) (Juicy.imageHeight (image))
+    im <- liftIO $ Juicy.readImage "image.jpg"
+
+    let image = case im of
+            Right (Juicy.ImageYCbCr8 i) -> i
+            Left s -> error s
+        size = V2 (Juicy.imageWidth image) (Juicy.imageHeight image)
+
     tex <- newTexture2D SRGB8 size maxBound -- JPG converts to SRGB
     writeTexture2D tex 0 0 size $ Juicy.pixelFold getJuicyPixel [] image
     generateTexture2DMipmap tex
