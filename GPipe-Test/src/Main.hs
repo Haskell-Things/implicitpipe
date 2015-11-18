@@ -66,6 +66,10 @@ main =
     loop shader makePrimitives uniform 0
 
 loop shader makePrimitives uniform angle = do
+  GLFW.getCursorPos >>= liftIO . print
+  GLFW.getMouseButton GLFW.MouseButton'1 >>= liftIO . print
+  GLFW.getKey GLFW.Key'Space >>= liftIO . print
+  GLFW.windowShouldClose >>= liftIO . print
   -- Write this frames uniform value
   size@(V2 w h) <- getContextBuffersSize
   let modelRot = fromQuaternion (axisAngle (V3 1 0.5 0.3) angle)
