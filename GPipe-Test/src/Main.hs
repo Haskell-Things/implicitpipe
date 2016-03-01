@@ -3,6 +3,7 @@ module Main where
 
 import Control.Applicative
 import Control.Monad
+import Text.Printf (printf)
 import "transformers" Control.Monad.IO.Class
 
 import Graphics.GPipe
@@ -20,6 +21,10 @@ main =
     writeBuffer positions 0 [V2 1 1, V2 1 (-1), V2 (-1) 1, V2 (-1) (-1)]
     writeBuffer normals 0 [V3 1 0 0, V3 (-1) 0 0, V3 0 1 0, V3 0 (-1) 0, V3 0 0 1, V3 0 0 (-1)]
     writeBuffer tangents 0 [V3 0 1 0, V3 0 (-1) 0, V3 0 0 1, V3 0 0 (-1), V3 (-1) 0 0, V3 1 0 0]
+
+    -- Spew scroll info
+    GLFW.registerScrollCallback . pure $
+        \w dx dy -> printf "scroll dx%v dy%v on %v\n" dx dy (show w)
 
     -- Make a Render action that returns a PrimitiveArray for the cube
     let makePrimitives = do
@@ -66,10 +71,12 @@ main =
     loop shader makePrimitives uniform 0
 
 loop shader makePrimitives uniform angle = do
-  GLFW.getCursorPos >>= liftIO . print
-  GLFW.getMouseButton GLFW.MouseButton'1 >>= liftIO . print
-  GLFW.getKey GLFW.Key'Space >>= liftIO . print
-  GLFW.windowShouldClose >>= liftIO . print
+  (cursorX, cursorY)<- GLFW.getCursorPos
+  mouseButton1 <- GLFW.getMouseButton GLFW.MouseButton'1
+  spaceKey <- GLFW.getKey GLFW.Key'Space
+  shouldClose <- GLFW.windowShouldClose
+  liftIO $ printf "cursorPos x%v y%v, mouseButton1 %v, spaceKey %v, shouldClose %v\n"
+    cursorX cursorY (show mouseButton1) (show spaceKey) (show shouldClose)
   -- Write this frames uniform value
   size@(V2 w h) <- getContextBuffersSize
   let modelRot = fromQuaternion (axisAngle (V3 1 0.5 0.3) angle)
