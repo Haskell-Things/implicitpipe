@@ -1,5 +1,6 @@
 flags: {}
 packages:
 - '.'
-extra-deps: []
+extra-deps:
+- GPipe-GLFW-1.2.2
 resolver: lts-5.5

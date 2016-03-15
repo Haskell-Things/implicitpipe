@@ -11,7 +11,7 @@ executable Main
                        base
                      , GPipe
                      , transformers
-                     , GPipe-GLFW
+                     , GPipe-GLFW >=1.2.2
                      , linear
                      , JuicyPixels
   ghc-options:         -Wall -threaded
