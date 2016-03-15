@@ -28,4 +28,5 @@ Find GPipe on
 # Changes
 
 * 0.1.0.1
-    * Changed out input state is output & added a scroll callback example.
+    * Changed how input state is output & added a scroll callback example.
+    * [pakanek](https://github.com/pakanek) added a missing min-version constraint.
