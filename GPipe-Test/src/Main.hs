@@ -1,16 +1,14 @@
 {-# LANGUAGE ScopedTypeVariables, PackageImports, FlexibleContexts, TypeFamilies #-}
 module Main where
 
-import Control.Applicative
 import Control.Monad
 import Text.Printf (printf)
-import "transformers" Control.Monad.IO.Class
+import Control.Monad.IO.Class
 
 import Graphics.GPipe
 import qualified "GPipe-GLFW" Graphics.GPipe.Context.GLFW as GLFW
 import qualified "JuicyPixels" Codec.Picture as Juicy
 import qualified "JuicyPixels" Codec.Picture.Types as Juicy
-import "linear" Linear
 
 main =
   runContextT GLFW.newContext (ContextFormatColorDepth SRGB8 Depth16) $ do
@@ -39,6 +37,7 @@ main =
 
     let image = case im of
             Right (Juicy.ImageYCbCr8 i) -> i
+            Right _ -> error "Got unexpected image color space"
             Left s -> error s
         size = V2 (Juicy.imageWidth image) (Juicy.imageHeight image)
 
@@ -70,7 +69,7 @@ main =
     -- Run the loop
     loop shader makePrimitives uniform 0
 
-loop shader makePrimitives uniform angle = do
+loop shader makePrimitives uniform angleRot = do
   (cursorX, cursorY)<- GLFW.getCursorPos
   mouseButton1 <- GLFW.getMouseButton GLFW.MouseButton'1
   spaceKey <- GLFW.getKey GLFW.Key'Space
@@ -79,7 +78,7 @@ loop shader makePrimitives uniform angle = do
     cursorX cursorY (show mouseButton1) (show spaceKey) (show shouldClose)
   -- Write this frames uniform value
   size@(V2 w h) <- getContextBuffersSize
-  let modelRot = fromQuaternion (axisAngle (V3 1 0.5 0.3) angle)
+  let modelRot = fromQuaternion (axisAngle (V3 1 0.5 0.3) angleRot)
       modelMat = mkTransformationMat modelRot (pure 0)
       projMat = perspective (pi/3) (fromIntegral w / fromIntegral h) 1 100
       viewMat = mkTransformationMat identity (- V3 0 0 5)
@@ -97,7 +96,7 @@ loop shader makePrimitives uniform angle = do
 
   closeRequested <- GLFW.windowShouldClose
   unless closeRequested $
-    loop shader makePrimitives uniform ((angle + 0.005) `mod''` (2*pi))
+    loop shader makePrimitives uniform ((angleRot + 0.005) `mod''` (2*pi))
 
 getJuicyPixel xs _x _y pix =
   let Juicy.PixelRGB8 r g b = Juicy.convertPixel pix in V3 r g b : xs
