@@ -24,6 +24,20 @@ Find GPipe on
 [stackage](https://www.stackage.org/package/GPipe), and
 [hackage](https://hackage.haskell.org/package/GPipe).
 
+# Building
+
+* Cabal
+
+  * With Nix: [Add this project to `~/.nixpkgs/config.nix`](https://nixos.org/nixpkgs/manual/#how-to-build-projects-that-depend-on-each-other) and then use either `nix-shell` or `nix-build`.
+    * `nix-shell "<nixpkgs>" -A haskellPackages.GPipe-Test.env` and then `cabal build`
+    * `nix-build "<nixpkgs>" -A haskellPackages.GPipe-Test`
+  * Without Nix: Install the system package dependencies listed in `stack.yaml` using your system's package manager. It is recommended that you use sandboxes to allow Cabal's resolver to pick Haskell dependencies.
+
+* Stack
+
+  * With Nix: Use `stack build` and the [system package dependencies listed in `stack.yaml` will be fetched for a build shell](https://github.com/commercialhaskell/stack/blob/master/doc/nix_integration.md).
+  * Without Nix: Install the system package dependencies listed in `stack.yaml` using your system's package manager. Then build with `stack build`.
+
 # Changes
 
 * 0.1.0.2
