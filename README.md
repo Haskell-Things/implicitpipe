@@ -5,7 +5,30 @@ This example has been lifted almost verbatim from
 [GPipe is dead, long live GPipe!](http://tobbebex.blogspot.com/2015/09/gpipe-is-dead-long-live-gpipe.html).
 All credit and ownership goes to Tobias Bexelius.
 
-## GPipe
+## Building
+
+* Cabal
+
+  * With Nix: [Add this project to `~/.nixpkgs/config.nix`](https://nixos.org/nixpkgs/manual/#how-to-build-projects-that-depend-on-each-other) and then use either `nix-shell` or `nix-build`.
+    * `nix-shell "<nixpkgs>" -A haskellPackages.GPipe-Test.env` and then `cabal build`
+    * `nix-build "<nixpkgs>" -A haskellPackages.GPipe-Test`
+  * Without Nix: Install the system package dependencies listed in `stack.yaml` using your system's package manager. It is recommended that you use sandboxes to allow Cabal's resolver to pick Haskell dependencies.
+
+* Stack
+
+  * With Nix: Use `stack build` and the [system package dependencies listed in `stack.yaml` will be fetched for a build shell](https://github.com/commercialhaskell/stack/blob/master/doc/nix_integration.md).
+  * Without Nix: Install the system package dependencies listed in `stack.yaml` using your system's package manager. Then build with `stack build`.
+
+## Changes
+
+* 0.1.0.2
+    * Use GPipe-GLFW 1.2.3
+    * Correct some ghc warnings, ignore others
+* 0.1.0.1
+    * Changed how input state is output & added a scroll callback example.
+    * [pakanek](https://github.com/pakanek) added a missing min-version constraint.
+
+# What is GPipe?
 
 **GPipe** is a typesafe functional API based on the conceptual model of OpenGL,
 but without the imperative state machine.
@@ -23,26 +46,3 @@ Find GPipe on
 [github](https://github.com/tobbebex/GPipe-Core),
 [stackage](https://www.stackage.org/package/GPipe), and
 [hackage](https://hackage.haskell.org/package/GPipe).
-
-# Building
-
-* Cabal
-
-  * With Nix: [Add this project to `~/.nixpkgs/config.nix`](https://nixos.org/nixpkgs/manual/#how-to-build-projects-that-depend-on-each-other) and then use either `nix-shell` or `nix-build`.
-    * `nix-shell "<nixpkgs>" -A haskellPackages.GPipe-Test.env` and then `cabal build`
-    * `nix-build "<nixpkgs>" -A haskellPackages.GPipe-Test`
-  * Without Nix: Install the system package dependencies listed in `stack.yaml` using your system's package manager. It is recommended that you use sandboxes to allow Cabal's resolver to pick Haskell dependencies.
-
-* Stack
-
-  * With Nix: Use `stack build` and the [system package dependencies listed in `stack.yaml` will be fetched for a build shell](https://github.com/commercialhaskell/stack/blob/master/doc/nix_integration.md).
-  * Without Nix: Install the system package dependencies listed in `stack.yaml` using your system's package manager. Then build with `stack build`.
-
-# Changes
-
-* 0.1.0.2
-    * Use GPipe-GLFW 1.2.3
-    * Correct some ghc warnings, ignore others
-* 0.1.0.1
-    * Changed how input state is output & added a scroll callback example.
-    * [pakanek](https://github.com/pakanek) added a missing min-version constraint.
