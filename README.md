@@ -10,7 +10,7 @@ All credit and ownership goes to Tobias Bexelius.
 * Cabal
 
   * With Nix: [Add this project to `~/.nixpkgs/config.nix`](https://nixos.org/nixpkgs/manual/#how-to-build-projects-that-depend-on-each-other) and then use either `nix-shell` or `nix-build`.
-    * `nix-shell "<nixpkgs>" -A haskellPackages.GPipe-Test.env` and then `cabal build`
+    * `nix-shell "<nixpkgs>" -A haskellPackages.GPipe-Test.env` will open a shell where `cabal build` and any other Cabal commands should work.
     * `nix-build "<nixpkgs>" -A haskellPackages.GPipe-Test`
   * Without Nix: Install the system package dependencies listed in `stack.yaml` using your system's package manager. It is recommended that you use sandboxes to allow Cabal's resolver to pick Haskell dependencies.
 
