@@ -1,12 +1,22 @@
 flags: {}
 packages:
 - '.'
-extra-deps:
-- GPipe-2.1.8
-- GPipe-GLFW-1.2.3
-resolver: lts-7.8
+- location:
+    git: git@github.com:plredmond/GPipe-GLFW.git
+    commit: 6c86ee7def830ed211a3ea170598bcca555dcf66
+  subdirs: [ GPipe-GLFW ]
+  extra-dep: true
+#- '../../gpipe-glfw/GPipe-GLFW'
+- location:
+    git: git@github.com:plredmond/GPipe-Core.git
+    commit: bfa8035117b26809a0d542c2f45b94de8f2f5a47
+  subdirs: [ GPipe-Core ]
+  extra-dep: true
+#- '../../@gpipe/GPipe-Core'
+extra-deps: []
+resolver: nightly-2016-12-03
 nix:
-    enable: true
+    enable: false
     # Required C libraries: GL, X11, Xi, Xrandr, Xxf86vm, Xcursor, Xinerama
     packages:
         - mesa # GL for Intel graphics; something else for, eg. nvidia

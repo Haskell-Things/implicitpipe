@@ -11,7 +11,7 @@ executable Main
   build-depends:
                        base
                      , GPipe
-                     , GPipe-GLFW >=1.2.3
+                     , GPipe-GLFW >=1.3
                      , linear
                      , JuicyPixels
   ghc-options:         -Wall -threaded -Wno-missing-signatures

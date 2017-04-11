@@ -4,6 +4,7 @@ module Main where
 import Control.Monad
 import Text.Printf (printf)
 import Control.Monad.IO.Class
+import Data.Proxy
 
 import Graphics.GPipe
 import qualified "GPipe-GLFW" Graphics.GPipe.Context.GLFW as GLFW
@@ -11,7 +12,7 @@ import qualified "JuicyPixels" Codec.Picture as Juicy
 import qualified "JuicyPixels" Codec.Picture.Types as Juicy
 
 main =
-  runContextT GLFW.newContext (ContextFormatColorDepth SRGB8 Depth16) $ do
+  runContextT (Proxy :: Proxy GLFW.Handle) GLFW.defaultHandleConfig $ do
     -- Create vertex data buffers
     positions :: Buffer os (B2 Float) <- newBuffer 4
     normals   :: Buffer os (B3 Float) <- newBuffer 6
@@ -20,9 +21,11 @@ main =
     writeBuffer normals 0 [V3 1 0 0, V3 (-1) 0 0, V3 0 1 0, V3 0 (-1) 0, V3 0 0 1, V3 0 0 (-1)]
     writeBuffer tangents 0 [V3 0 1 0, V3 0 (-1) 0, V3 0 0 1, V3 0 0 (-1), V3 (-1) 0 0, V3 1 0 0]
 
+    win <- newWindow (WindowFormatColorDepth SRGB8 Depth16) (GLFW.defaultWindowConfig "test it!")
+
     -- Spew scroll info
-    GLFW.registerScrollCallback . pure $
-        \w dx dy -> printf "scroll dx%v dy%v on %v\n" dx dy (show w)
+    GLFW.setScrollCallback win . pure $
+        \dx dy -> printf "scroll dx%v dy%v on %v\n" dx dy
 
     -- Make a Render action that returns a PrimitiveArray for the cube
     let makePrimitives = do
@@ -64,20 +67,20 @@ main =
           colorOption = ContextColorOption NoBlending (pure True)
           depthOption = DepthOption Less True
 
-      drawContextColorDepth (const (colorOption, depthOption)) litFragsWithDepth
+      drawWindowColorDepth (const (win, colorOption, depthOption)) litFragsWithDepth
 
     -- Run the loop
-    loop shader makePrimitives uniform 0
+    loop win shader makePrimitives uniform 0
 
-loop shader makePrimitives uniform angleRot = do
-  (cursorX, cursorY)<- GLFW.getCursorPos
-  mouseButton1 <- GLFW.getMouseButton GLFW.MouseButton'1
-  spaceKey <- GLFW.getKey GLFW.Key'Space
-  shouldClose <- GLFW.windowShouldClose
-  liftIO $ printf "cursorPos x%v y%v, mouseButton1 %v, spaceKey %v, shouldClose %v\n"
-    cursorX cursorY (show mouseButton1) (show spaceKey) (show shouldClose)
+loop win shader makePrimitives uniform angleRot = do
+  Just (cursorX, cursorY) <- GLFW.getCursorPos win
+  mouseButton1 <- GLFW.getMouseButton win GLFW.MouseButton'1
+  spaceKey <- GLFW.getKey win GLFW.Key'Space
+  shouldClose <- GLFW.windowShouldClose win
+--liftIO $ printf "cursorPos x%v y%v, mouseButton1 %v, spaceKey %v, shouldClose %v\n"
+--  cursorX cursorY (show mouseButton1) (show spaceKey) (show shouldClose)
   -- Write this frames uniform value
-  size@(V2 w h) <- getContextBuffersSize
+  size@(V2 w h) <- getWindowSize win
   let modelRot = fromQuaternion (axisAngle (V3 1 0.5 0.3) angleRot)
       modelMat = mkTransformationMat modelRot (pure 0)
       projMat = perspective (pi/3) (fromIntegral w / fromIntegral h) 1 100
@@ -88,15 +91,17 @@ loop shader makePrimitives uniform angleRot = do
 
   -- Render the frame and present the results
   render $ do
-    clearContextColor 0 -- Black
-    clearContextDepth 1 -- Far plane
+    clearWindowColor win 0 -- Black
+    clearWindowDepth win 1 -- Far plane
     prims <- makePrimitives
     shader $ ShaderEnvironment prims (FrontAndBack, ViewPort 0 size, DepthRange 0 1)
-  swapContextBuffers
+  swapWindowBuffers win
 
-  closeRequested <- GLFW.windowShouldClose
+  withContextWindow win $ flip GLFW.mainstep GLFW.Poll
+
+  Just closeRequested <- GLFW.windowShouldClose win
   unless closeRequested $
-    loop shader makePrimitives uniform ((angleRot + 0.005) `mod''` (2*pi))
+    loop win shader makePrimitives uniform ((angleRot + 0.005) `mod''` (2*pi))
 
 getJuicyPixel xs _x _y pix =
   let Juicy.PixelRGB8 r g b = Juicy.convertPixel pix in V3 r g b : xs
