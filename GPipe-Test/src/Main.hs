@@ -97,7 +97,7 @@ loop win shader makePrimitives uniform angleRot = do
     shader $ ShaderEnvironment prims (FrontAndBack, ViewPort 0 size, DepthRange 0 1)
   swapWindowBuffers win
 
-  withContextWindow win $ flip GLFW.mainstep GLFW.Poll
+  withContextWindow win $ mapM_ (flip GLFW.mainstep GLFW.Poll)
 
   Just closeRequested <- GLFW.windowShouldClose win
   unless closeRequested $
