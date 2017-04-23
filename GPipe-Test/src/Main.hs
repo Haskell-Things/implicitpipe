@@ -4,7 +4,6 @@ module Main where
 import Control.Monad
 import Text.Printf (printf)
 import Control.Monad.IO.Class
-import Data.Proxy
 
 import Graphics.GPipe
 import qualified "GPipe-GLFW" Graphics.GPipe.Context.GLFW as GLFW
@@ -12,7 +11,7 @@ import qualified "JuicyPixels" Codec.Picture as Juicy
 import qualified "JuicyPixels" Codec.Picture.Types as Juicy
 
 main =
-  runContextT (Proxy :: Proxy GLFW.Handle) GLFW.defaultHandleConfig $ do
+  runContextT GLFW.defaultHandleConfig $ do
     -- Create vertex data buffers
     positions :: Buffer os (B2 Float) <- newBuffer 4
     normals   :: Buffer os (B3 Float) <- newBuffer 6
