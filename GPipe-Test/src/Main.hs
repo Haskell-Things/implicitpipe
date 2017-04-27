@@ -23,7 +23,7 @@ main =
     win <- newWindow (WindowFormatColorDepth SRGB8 Depth16) (GLFW.defaultWindowConfig "test it!")
 
     -- Spew scroll info
-    GLFW.setScrollCallback win . pure $
+    void . GLFW.setScrollCallback win . pure $
         \dx dy -> printf "scroll dx%v dy%v on %v\n" dx dy
 
     -- Make a Render action that returns a PrimitiveArray for the cube
@@ -95,8 +95,6 @@ loop win shader makePrimitives uniform angleRot = do
     prims <- makePrimitives
     shader $ ShaderEnvironment prims (FrontAndBack, ViewPort 0 size, DepthRange 0 1)
   swapWindowBuffers win
-
-  withContextWindow win $ mapM_ (flip GLFW.mainstep GLFW.Poll)
 
   Just closeRequested <- GLFW.windowShouldClose win
   unless closeRequested $

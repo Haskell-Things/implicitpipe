@@ -1,20 +1,18 @@
 flags: {}
 packages:
 - '.'
-- location:
+- location: #'../../gpipe-glfw'
     git: git@github.com:plredmond/GPipe-GLFW.git
-    commit: 6c86ee7def830ed211a3ea170598bcca555dcf66
+    commit: 83c426bc2313e87c7d293f891757247dd52caf1c
   subdirs: [ GPipe-GLFW ]
   extra-dep: true
-#- '../../gpipe-glfw/GPipe-GLFW'
-- location:
-    git: git@github.com:plredmond/GPipe-Core.git
-    commit: bfa8035117b26809a0d542c2f45b94de8f2f5a47
+- location: #'../../@gpipe'
+    git: git@github.com:tobbebex/GPipe-Core.git
+    commit: 64284984489f7be1408fd11f1d8cc7881a1a14e9
   subdirs: [ GPipe-Core ]
   extra-dep: true
-#- '../../@gpipe/GPipe-Core'
 extra-deps: []
-resolver: nightly-2016-12-03
+resolver: nightly-2017-04-23
 nix:
     enable: false
     # Required C libraries: GL, X11, Xi, Xrandr, Xxf86vm, Xcursor, Xinerama
