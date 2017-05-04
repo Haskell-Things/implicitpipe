@@ -1,17 +1,9 @@
 flags: {}
 packages:
 - '.'
-- location: #'../../gpipe-glfw'
-    git: git@github.com:plredmond/GPipe-GLFW.git
-    commit: 83c426bc2313e87c7d293f891757247dd52caf1c
-  subdirs: [ GPipe-GLFW ]
-  extra-dep: true
-- location: #'../../@gpipe'
-    git: git@github.com:tobbebex/GPipe-Core.git
-    commit: 64284984489f7be1408fd11f1d8cc7881a1a14e9
-  subdirs: [ GPipe-Core ]
-  extra-dep: true
-extra-deps: []
+extra-deps:
+- GPipe-2.2
+- GPipe-GLFW-1.4.0
 resolver: nightly-2017-04-23
 nix:
     enable: false
