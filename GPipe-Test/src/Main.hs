@@ -79,7 +79,7 @@ loop win shader makePrimitives uniform angleRot = do
 --liftIO $ printf "cursorPos x%v y%v, mouseButton1 %v, spaceKey %v, shouldClose %v\n"
 --  cursorX cursorY (show mouseButton1) (show spaceKey) (show shouldClose)
   -- Write this frames uniform value
-  size@(V2 w h) <- getWindowSize win
+  size@(V2 w h) <- getFrameBufferSize win
   let modelRot = fromQuaternion (axisAngle (V3 1 0.5 0.3) angleRot)
       modelMat = mkTransformationMat modelRot (pure 0)
       projMat = perspective (pi/3) (fromIntegral w / fromIntegral h) 1 100
