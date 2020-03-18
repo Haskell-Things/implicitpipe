@@ -17,6 +17,7 @@ import Graphics.Implicit.Primitives
 import Graphics.Implicit.Export
 import Graphics.Implicit.Export.DiscreteAproxable
 --import Graphics.Implicit.Export.Utils
+-- XXX: ^^ cleanupTris
 
 import Data.VectorSpace (normalized, (^-^))
 import Data.Cross (cross3)
@@ -29,19 +30,16 @@ trim :: NormedTriangleMesh
 trim = cleanupTris . discreteAprox 1.5 $ obj
 
 obj = autocenter $ union $ [
-    rect3R 0 (0,0,0) (20,20,20) -- rect3R 10 15 12
+    rect3R 0 (0,0,0) (20,20,20)
   , translate (20,20,20) (sphere 15)
   , translate (0,0,25) (rect3R 2 (0,0,0) (10,10,10))
-  --, translate (0, 0, -30) heart
+  --, translate (0, 0, -30) fun
   ] ++
   []
   --map (\x -> translate (0,0,20 + (10 - x) * 11) (rect3R 0 (0,0,0) (10 - x, 10 - x, 10 - x))) [0..9]
 
-heart:: SymbolicObj3
-heart = implicit (\(x,y,z) -> x^4 + y^4 + z^4 - 15000) ((-20,-20,-20),(20,20,20))
-
---  , translate (0,0,35) (rect3R 2 (0,0,0) (2,2,2))
--- cleanupTris $
+fun:: SymbolicObj3
+fun = implicit (\(x,y,z) -> x^4 + y^4 + z^4 - 15000) ((-20,-20,-20),(20,20,20))
 
 ptri (NormedTriangleMesh ts) = mapM_ (\(NormedTriangle (a, b, c)) -> print (a, b, c) ) ts
 
@@ -117,8 +115,10 @@ main = do
       (bbx, _, _) = bb
       -- ratio perserving scaling
       s = let m = bmax (bb - ba) in pack (m, m, m)  -- ^* 1.0
+      -- scale by x
       --s = V3 (bbx - bax) (bbx - bax) (bbx - bax)
-      --s = pack $ ba - bb
+      -- non-preserving scaling
+      --s = pack $ bb - ba
 
   print (ba, bb, s)
   --print $ rmp s trim
@@ -166,7 +166,6 @@ main = do
 
     -- Create the shader
     shader <- compileShader $ do
-      sides <- fmap makeSide <$> toPrimitiveStream primitives
       --tries <- toPrimitiveStream mytris
 
       primitiveStream <- toPrimitiveStream mytris
@@ -177,10 +176,11 @@ main = do
 
       let filterMode = SamplerFilter Linear Linear Linear (Just 4)
           edgeMode = (pure ClampToEdge, undefined)
-          --projectedSides = proj modelViewProj normMat <$> sides
+
       samp <- newSampler2D (const (tex, filterMode, edgeMode))
 
       fragmentStream <- rasterize (const (FrontAndBack, ViewPort (V2 0 0) (V2 (1920 `div` 1) 1080), DepthRange 0 1)) projected -- primitiveStream
+      -- colorful normals
       --drawWindowColor (const (win, ContextColorOption NoBlending (V3 True True True))) fragmentStream
 
       let fragNormals = fragmentStream
@@ -192,29 +192,8 @@ main = do
           depthOption = DepthOption Less True
 
       drawWindowColorDepth (const (win, colorOption, depthOption)) litFragsWithDepth
-      --drawWindowColorDepth (const (win, colorOption, depthOption)) litFragsWithDepth
 
-      {--
-      --}
       return ()
-
-
-{--
-      (modelViewProj, normMat) <- getUniform (const (uniform, 0))
-      let filterMode = SamplerFilter Linear Linear Linear (Just 4)
-          edgeMode = (pure ClampToEdge, undefined)
-          projectedSides = proj modelViewProj normMat <$> sides
-      samp <- newSampler2D (const (tex, filterMode, edgeMode))
-
-      fragNormalsUV <- rasterize rasterOptions projectedSides
-      let litFrags = light samp <$> fragNormalsUV
-          litFragsWithDepth = withRasterizedInfo
-              (\a x -> (a, getZ $ rasterizedFragCoord x)) litFrags
-          colorOption = ContextColorOption NoBlending (pure True)
-          depthOption = DepthOption Less True
-
-      drawWindowColorDepth (const (win, colorOption, depthOption)) litFragsWithDepth
---}
 
     -- Run the loop
     loop win shader makePrimitives tris uniform 0
@@ -248,6 +227,7 @@ loop win shader makePrimitives tris uniform angleRot = do
     clearWindowColor win 0 -- Black
     clearWindowDepth win 1 -- Far plane
     prims <- makePrimitives
+
     --vertexArray <- newVertexArray vertexBuffer
     --let primitiveArray = toPrimitiveArray TriangleList vertexArray
     vertexArray <- newVertexArray tris
@@ -270,10 +250,32 @@ getZ (V4 _ _ z _) = z -- Some day I'll learn to use lenses instead...
 
 data ShaderEnvironment = ShaderEnvironment
   { primitives :: PrimitiveArray Triangles (B2 Float, (B3 Float, B3 Float))
---  , mytris :: PrimitiveArray Triangles (B3 Float) -- , B3 Float)
   , mytris :: PrimitiveArray Triangles (B3 Float, B3 Float)
   , rasterOptions :: (Side, ViewPort, DepthRange)
   }
+
+proj modelViewProj normMat (V3 px py pz, normal) =
+  (modelViewProj !* V4 px py pz 1, fmap Flat $ normMat !* normal)
+
+light color normal =
+  (V3 0 0.5 0) ^* (clamp (normal `dot` V3 0 1 1) 0 1)
+-- ^^ light color
+
+-- global ilum hack
+go color = color ^+^ 0.2 -- 0.1 ^+^ color ^+^ V3 0.2 0 0
+
+-- eof
+--
+-- OLDstuff
+--
+-- Set color from sampler and apply directional light
+light'' samp normal =
+  --sample2D samp SampleAuto Nothing Nothing $ pure (normal `dot` V3 0 0 1)
+  pure (normal `dot` V3 0 0 1)
+
+-- Project the cube's positions and normals with ModelViewProjection matrix
+proj' modelViewProj normMat (V3 px py pz, normal, uv) =
+  (modelViewProj !* V4 px py pz 1, (fmap Flat $ normMat !* normal, uv))
 
 -- Project the sides coordinates using the instance's normal and tangent
 makeSide (p@(V2 x y), (normal, tangent)) =
@@ -281,27 +283,7 @@ makeSide (p@(V2 x y), (normal, tangent)) =
   where bitangent = cross normal tangent
         uv = (p + 1) / 2
 
--- Project the cube's positions and normals with ModelViewProjection matrix
-proj' modelViewProj normMat (V3 px py pz, normal, uv) =
-  (modelViewProj !* V4 px py pz 1, (fmap Flat $ normMat !* normal, uv))
-
-
-proj modelViewProj normMat (V3 px py pz, normal) = --  V3 cx cy cz) =  -- normal, uv) =
-  (modelViewProj !* V4 px py pz 1, fmap Flat $ normMat !* normal) -- V3 cx cy cz) -- (fmap Flat $ normMat !* normal, uv))
-
--- Set color from sampler and apply directional light
-light'' samp normal =
-  --sample2D samp SampleAuto Nothing Nothing $ pure (normal `dot` V3 0 0 1)
-  pure (normal `dot` V3 0 0 1)
-
-light color normal =
-  (V3 0 0.5 0) ^* (clamp (normal `dot` V3 0 1 1) 0 1)
--- ^^ light color
-
--- global hack
-go color = color ^+^ 0.2 -- 0.1 ^+^ color ^+^ V3 0.2 0 0
-
 light' samp (normal, uv) =
   sample2D samp SampleAuto Nothing Nothing uv * pure (normal `dot` V3 0 0 1)
 
--- eof
+
