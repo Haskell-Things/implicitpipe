@@ -1,8 +1,12 @@
 name:                GPipe-ImplicitCAD
 version:             0.1.0.3
+synopsis:            GPipe based viewer for ImplicitCAD
 cabal-version:       >=1.10
 build-type:          Simple
-author:              copy+paste
+author:              Richard Marko
+copyright:           2020 Richard Marko
+maintainer:          srk@48.io
+category:            Graphics
 license:             MIT
 
 executable Main
