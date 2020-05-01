@@ -140,10 +140,6 @@ main = do
     void . GLFW.setScrollCallback win . pure $
         \dx dy -> printf "scroll dx%v dy%v\n" dx dy
 
-    void . GLFW.setMouseButtonCallback win . pure $
-        \s k a -> print (s, k, a)
-        -- ^ button state (modifier keys)
-
     -- Make a Render action that returns a PrimitiveArray for the cube
     let makePrimitives = do
           pArr <- newVertexArray positions
@@ -178,10 +174,10 @@ main = do
       let
           projected = proj modelViewProj normMat <$> primitiveStream
 
-      --let filterMode = SamplerFilter Linear Linear Linear (Just 4)
-      --    edgeMode = (pure ClampToEdge, undefined)
+      let filterMode = SamplerFilter Linear Linear Linear (Just 4)
+          edgeMode = (pure ClampToEdge, undefined)
 
-      --samp <- newSampler2D (const (tex, filterMode, edgeMode))
+      samp <- newSampler2D (const (tex, filterMode, edgeMode))
 
       fragmentStream <- rasterize (const (FrontAndBack, ViewPort (V2 0 0) (V2 (1920 `div` 1) 1080), DepthRange 0 1)) projected -- primitiveStream
       -- colorful normals
@@ -189,13 +185,10 @@ main = do
 
       let fragNormals = fragmentStream
       let --litFrags = fragNormals
-          litFrags = go . light <$> fragNormals
+          litFrags = go . light samp <$> fragNormals
           litFragsWithDepth = withRasterizedInfo
               (\a x -> (a, getZ $ rasterizedFragCoord x)) litFrags
-          --colorOption = ContextColorOption NoBlending (pure True)
-          colorOption = ContextColorOption (BlendRgbAlpha (FuncReverseSubtract, FuncReverseSubtract) (BlendingFactors SrcColor DstColor,
-            BlendingFactors OneMinusSrcAlpha DstAlpha) (V4 0.2 1 0.0 0) ) (pure True)
-
+          colorOption = ContextColorOption NoBlending (pure True)
           depthOption = DepthOption Less True
 
       drawWindowColorDepth (const (win, colorOption, depthOption)) litFragsWithDepth
@@ -239,7 +232,7 @@ loop win shader makePrimitives tris uniform angleRot = do
     --let primitiveArray = toPrimitiveArray TriangleList vertexArray
     vertexArray <- newVertexArray tris
     let primitiveArray = toPrimitiveArray TriangleList vertexArray
-    shader $ ShaderEnvironment prims primitiveArray (Front, ViewPort 0 size, DepthRange 0 1)
+    shader $ ShaderEnvironment prims primitiveArray (FrontAndBack, ViewPort 0 size, DepthRange 0 1)
   swapWindowBuffers win
 
   cr <- GLFW.windowShouldClose win
@@ -264,7 +257,7 @@ data ShaderEnvironment = ShaderEnvironment
 proj modelViewProj normMat (V3 px py pz, normal) =
   (modelViewProj !* V4 px py pz 1, fmap Flat $ normMat !* normal)
 
-light normal = 
+light color normal =
   (V3 0 0.5 0) ^* (clamp (normal `dot` V3 0 1 1) 0 1)
 -- ^^ light color
 
