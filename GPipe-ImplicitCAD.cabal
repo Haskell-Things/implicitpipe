@@ -16,9 +16,9 @@ executable Main
                        base
                      , GPipe >=2.2
                      , GPipe-GLFW >=1.4
+                     , GLFW-b
                      , implicit
                      , vector-space
                      , linear
-                     , JuicyPixels
-  ghc-options:         -Wall -threaded -Wno-missing-signatures
+  ghc-options:         -O2 -Wall -threaded -Wno-missing-signatures -rtsopts "-with-rtsopts -N -qg"
   default-language:    Haskell2010
