@@ -1,0 +1,48 @@
+name:                implicitpipe
+version:             0.1.0.0
+synopsis:            OpenGL (GPipe) based viewer for ImplicitCAD
+cabal-version:       >=1.10
+build-type:          Simple
+author:              Richard Marko
+copyright:           2020 Richard Marko
+maintainer:          srk@48.io
+category:            Graphics
+license:             MIT
+
+library
+  hs-source-dirs:      src
+  ghc-options:         -O2 -Wall
+  build-depends:
+                       base
+                     , data-default
+                     , GPipe >=2.2
+                     , GPipe-GLFW >=1.4
+                     , GLFW-b
+                     , implicit
+                     , vector-space
+                     , linear
+  default-language:    Haskell2010
+  exposed-modules:     Graphics.Implicit.Export.GL
+                     , Graphics.Implicit.Viewer
+                     , Graphics.Implicit.Viewer.Config
+                     , Graphics.Implicit.Viewer.Demos
+                     , Graphics.Implicit.Viewer.Types
+                     , Graphics.Implicit.Viewer.Util
+
+executable implicitview
+  hs-source-dirs:      app
+  main-is:             Main.hs
+  build-depends:
+                       base
+                     , implicitpipe
+  ghc-options:         -O2 -Wall -threaded -Wno-missing-signatures -rtsopts "-with-rtsopts -N -qg"
+  default-language:    Haskell2010
+
+executable implicitanim
+  hs-source-dirs:      app
+  main-is:             Animate.hs
+  build-depends:
+                       base
+                     , implicitpipe
+  ghc-options:         -O2 -Wall -threaded -Wno-missing-signatures -rtsopts "-with-rtsopts -N -qg"
+  default-language:    Haskell2010

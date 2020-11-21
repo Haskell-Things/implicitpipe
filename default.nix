@@ -1,1 +1,1 @@
-(import <nixpkgs> { overlays = [ (import ./overlay.nix) ]; }).haskellPackages.callCabal2nix "GPipe-ImplicitCAD" ./. {}
+(import <nixpkgs> { overlays = [ (import ./overlay.nix) ]; }).haskellPackages.callCabal2nix "implicitpipe" ./. {}

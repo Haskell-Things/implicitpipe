@@ -4,3 +4,6 @@ dist-newstyle/
 result
 .stack-work/
 *.swp
+*.eventlog
+*.eventlog.json
+*.prof
