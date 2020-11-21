@@ -70,11 +70,11 @@ viewer config@ViewerConf{..} = do
           $ fudgeBufferSize
           $ length
           $ meshToGL
-          $ meshFunFromResolution resolution 1 (obj 0)
+          $ meshFunFromResolution resolution 0 (obj 0)
 
     writeBuffer triangles 0
       $ meshToGL
-      $ meshFunFromResolution resolution 1 (obj 0)
+      $ meshFunFromResolution resolution 0 (obj 0)
 
     win <- newWindow
       (WindowFormatColorDepth SRGB8 Depth16)
