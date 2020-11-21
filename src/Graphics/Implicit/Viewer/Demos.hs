@@ -17,16 +17,12 @@ demoRotatingAnim t =
     rotate3 (0, 0, t*2*pi)
   $ cylinder2 2 1 2 `ontop` rect3R 0 (-3,-3,-1) (3,3,1)
 
-
 ontop :: SymbolicObj3 -> SymbolicObj3 -> SymbolicObj3
 ontop a b = union [ translate (0, 0, z) a, b ]
-  where z =
-              let
-                  ((_, _, aBottom), _) = getBox a
-                  (_, (_ ,_ , bTop)) = getBox b
-              in bTop - aBottom
-
-
+  where z = let
+                ((_, _, aBottom), _) = getBox a
+                (_, (_ ,_ , bTop)) = getBox b
+            in bTop - aBottom
 
 demoTranslatedSymbolic :: SymbolicObj3
 demoTranslatedSymbolic = translate (45, 0, 0) demoSymbolic
@@ -67,6 +63,3 @@ demoScene = union $ [
   -- , translate (55, 55, 0) demoSymbolic
   ] ++
   map (\x -> translate (0,0,20 + (10 - x) * 11) (rect3R 0 (0,0,0) (10 - x, 10 - x, 10 - x))) [0..9]
-
-
-
