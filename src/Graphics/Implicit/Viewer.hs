@@ -67,7 +67,6 @@ viewer config@ViewerConf{..} = do
   runContextT GLFW.defaultHandleConfig $ do
     triangles :: Buffer os PrimitiveBuffer
       <- newBuffer
-          $ fudgeBufferSize
           $ length
           $ meshToGL
           $ meshFunFromResolution resolution 0 (obj 0)
@@ -202,26 +201,26 @@ loop win shader triangles uniform viewerState = do
   -- Write this frames uniform value
   writeBuffer uniform 0 [(viewProjMat, normMat)]
 
-  when animation $ do
-    -- clean buffer
-    writeBuffer triangles 0
-      $ take (bufferLength triangles)
-      $ repeat 0
-    -- update with new mesh
-    writeBuffer triangles 0
-      $ meshToGL
-      $ meshFunFromResolution
-          resolution
-          (realToFrac animationTime)
-      $ obj
-          (realToFrac animationTime)
+  triangles' <- case animation of
+    False -> return triangles
+    True -> do
+      let mesh = meshToGL
+               $ meshFunFromResolution
+                   resolution
+                   (realToFrac animationTime)
+               $ obj
+                   (realToFrac animationTime)
+
+      triangles' <- resizeBuffer triangles (length mesh)
+      writeBuffer triangles' 0 mesh
+      return triangles'
 
   -- Render the frame and present the results
   render $ do
     clearWindowColor win 0 -- Black
     clearWindowDepth win 1 -- Far plane
 
-    vertexArray <- newVertexArray triangles
+    vertexArray <- newVertexArray triangles'
     let primitiveArray = toPrimitiveArray TriangleList vertexArray
     shader
       $ ShaderEnvironment
@@ -233,7 +232,7 @@ loop win shader triangles uniform viewerState = do
   swapWindowBuffers win
 
   unless shouldClose
-    $ loop win shader triangles uniform newViewerState
+    $ loop win shader triangles' uniform newViewerState
 
 updateViewerState
   :: forall os .  Window os RGBFloat Depth

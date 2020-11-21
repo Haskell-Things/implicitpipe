@@ -42,7 +42,6 @@ data ViewerConf = ViewerConf
   , rotation          :: Bool         -- ^ Enable rotation
   , rotationStep      :: Float        -- ^ Rotation step size
   , rotationInitAngle :: Float        -- ^ Initial rotation angle (in radians)
-  , fudgeBufferSize   :: Int -> Int   -- ^ Temporary buffer size scaling function
   }
 
 instance Default ViewerConf where
@@ -57,17 +56,11 @@ instance Default ViewerConf where
     , rotation          = False
     , rotationStep      = 0.001
     , rotationInitAngle = 0
-    , fudgeBufferSize   = id
     }
 
 -- | Enable animation
 animated :: ViewerConf -> ViewerConf
-animated c = c {
-    animation = True
-  -- We scale buffer size by 10 to fit animation frames with
-  -- more triangles into our vertex buffer. Until we can resize..
-  , fudgeBufferSize = (*10)
-  }
+animated c = c { animation = True }
 
 -- | Enable preview mode with lower resolution
 -- and higher animation and rotation step sizes.
