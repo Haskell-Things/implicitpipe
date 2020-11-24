@@ -58,9 +58,18 @@ instance Default ViewerConf where
     , rotationInitAngle = 0
     }
 
--- | Enable animation
-animated :: ViewerConf -> ViewerConf
-animated c = c { animation = True }
+-- | Default config with object
+object :: SymbolicObj3 -> ViewerConf
+object x = def { obj = const x }
+
+-- | Default config with animation
+animated :: (Double -> SymbolicObj3) -> ViewerConf
+animated ft = def
+  { obj = ft
+  , animation = True }
+
+zoom :: Float -> ViewerConf -> ViewerConf
+zoom n x = x { initZoom = n }
 
 -- | Enable preview mode with lower resolution
 -- and higher animation and rotation step sizes.

@@ -14,6 +14,7 @@ library
   ghc-options:         -O2 -Wall
   build-depends:
                        base
+                     , containers
                      , data-default
                      , GPipe >=2.2
                      , GPipe-GLFW >=1.4
@@ -26,6 +27,7 @@ library
                      , Graphics.Implicit.Viewer
                      , Graphics.Implicit.Viewer.Config
                      , Graphics.Implicit.Viewer.Demos
+                     , Graphics.Implicit.Viewer.Shaders
                      , Graphics.Implicit.Viewer.Types
                      , Graphics.Implicit.Viewer.Util
 

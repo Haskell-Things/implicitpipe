@@ -14,11 +14,13 @@ module Graphics.Implicit.Viewer (
   , viewerMain
   ) where
 
+import Control.Applicative
 import Control.Concurrent.MVar
 import Control.Monad
 import Control.Monad.IO.Class
 
 import Data.Default
+import qualified Data.Map
 
 import Graphics.GPipe hiding ((^-^), rotate)
 import Graphics.UI.GLFW (WindowHint(..))
@@ -27,25 +29,26 @@ import qualified "GPipe-GLFW" Graphics.GPipe.Context.GLFW as GLFW
 import Graphics.Implicit
 import Graphics.Implicit.Primitives (getBox)
 import Graphics.Implicit.Export.GL
+import Graphics.Implicit.Viewer.Shaders
 import Graphics.Implicit.Viewer.Types
 import Graphics.Implicit.Viewer.Util
 
 -- | View `SymbolicObj3` object using OpenGL viewer
 view :: SymbolicObj3 -> IO ()
-view o = viewer (def { obj = const o } )
+view o = viewer $ object o
 
 -- | Animate `SymbolicObj3` object using OpenGL viewer
 --
 -- Object can be parameterized by animation time `Double`
 -- in the interval [0..1].
 animate :: (Double -> SymbolicObj3) -> IO ()
-animate a = viewer $ animated (def { obj = a } )
+animate a = viewer $ animated a
 
 viewerMain :: IO ()
 viewerMain = viewer $ rotating def
 
 animateMain :: IO ()
-animateMain = viewer $ preview $ animated $ (def { initZoom = 2 })
+animateMain = viewer $ preview $ zoom 2 $ animated (obj def)
 
 -- | Configurable viewer
 --
@@ -65,18 +68,17 @@ viewer config@ViewerConf{..} = do
   scrollY' <- newMVar 0
 
   runContextT GLFW.defaultHandleConfig $ do
-    triangles :: Buffer os PrimitiveBuffer
-      <- newBuffer
-          $ length
-          $ meshToGL
+    let iniMesh =
+            meshToGL
           $ meshFunFromResolution resolution 0 (obj 0)
 
-    writeBuffer triangles 0
-      $ meshToGL
-      $ meshFunFromResolution resolution 0 (obj 0)
+    triangles :: Buffer os PrimitiveBuffer
+      <- newBuffer $ length $ iniMesh
+
+    writeBuffer triangles 0 iniMesh
 
     win <- newWindow
-      (WindowFormatColorDepth SRGB8 Depth16)
+      (WindowFormatColorDepth RGBA8 Depth16)
       ((GLFW.defaultWindowConfig "GPipe ImplicitCAD viewer")
         { GLFW.configHints = [ WindowHint'Samples $ Just 16 ] }
       )
@@ -88,80 +90,80 @@ viewer config@ViewerConf{..} = do
           void $ tryPutMVar scrollY' (realToFrac dy)
 
     -- Create a buffer for the uniform values
-    uniform :: Buffer os (Uniform UniformBuffer) <- newBuffer 1
+    unionBuffers <- Uniforms
+      <$> newBuffer 1
+      <*> newBuffer 1
+      <*> newBuffer 1
+      <*> newBuffer 1
 
     -- Create the shader
     shader <- compileShader $ do
       primitiveStream <- toPrimitiveStream shaderEnvTriangles
 
-      (modelViewProj, normMat) <- getUniform (const (uniform, 0))
+      modelViewProj <- getUni bMvpMat
+      modelMat      <- getUni bModelMat
+      normMat       <- getUni bNormMat
       let
-          proj (V3 px py pz, normal) =
+          proj :: (VFloat -> b)
+               -> (V3 VFloat, VertexInfo posType (V3 VFloat) barType colorType)
+               -> (V4 VFloat, VertexInfo (V3 VFloat) (V3 b) barType colorType)
+          proj f (V3 px py pz, VertexInfo{..}) =
             ( modelViewProj !* V4 px py pz 1
-            , fmap Flat $ normMat !* normal)
-          projected = proj <$> primitiveStream
+            , (VertexInfo {
+                viPos = normalizePoint $ modelMat !* V4 px py pz 1
+              , viNormal = fmap f $ normMat !* viNormal
+              , viBarycentric = viBarycentric
+              , viColor       = viColor
+              })
+            )
 
-      fragmentStream <- rasterize
-        shaderEnvRasterOptions
-        projected
+      fragmentStream <-
+            do
+              guard' (shaderEnvFlatNormals)
+              rasterize
+                shaderEnvRasterOptions
+                (proj Flat <$> primitiveStream)
+        <|> rasterize
+                shaderEnvRasterOptions
+                (proj id <$> primitiveStream)
 
-      let
-          getZ (V4 _ _ z _) = z
-
-          light normal =
-            0.1 -- global illumination
-            + (
-                -- red light from front right
-                (V3 0.8 0   0   ^* (clamp (normal `dot` V3 1 (-1) 1) 0 1))
-                -- green from front left
-              + (V3 0   0.8 0   ^* (clamp (normal `dot` V3 (-1) (-1) 1) 0 1))
-                -- blue from bottom
-              + (V3 0   0   0.8 ^* (clamp (normal `dot` V3 0 0 (-1)) 0 1))
-              )
-
-          litFrags = light <$> fragmentStream
-          litFragsWithDepth = withRasterizedInfo
-              (\a x -> (a, getZ $ rasterizedFragCoord x)) litFrags
-          colorOption = ContextColorOption NoBlending (pure True)
-          depthOption = DepthOption Less True
-
-      drawWindowColorDepth
-        (const (win, colorOption, depthOption))
-        litFragsWithDepth
-
-      return ()
+      asumShaderByName shaderEnvFragName win fragmentStream
 
     -- Run the loop
-    loop win shader triangles uniform
+    loop win shader triangles
+      --(Uniforms mvpMatBuffer normMatBuffer eyeBuffer)
+      unionBuffers
       ViewerState {
-        camYaw           = 0
-      , camPitch         = 0
-      , camZoom          = initZoom
-      , lastCursorPos    = (0, 0)
-      , scrollX          = scrollX'
-      , scrollY          = scrollY'
-      , lastSample       = 0
-      , fps              = 0
-      , animationRunning = animation
-      , animationForward = True
-      , animationTime    = animationInitTime
-      , rotationRunning  = rotation
-      , rotationAngle    = rotationInitAngle
-      , shouldClose      = False
-      , conf             = config
-      , objectScale      = (1/s)
-      , windowWidth      = 0
-      , windowHeight     = 0
+        camYaw            = 0
+      , camPitch          = 0
+      , camZoom           = initZoom
+      , lastCursorPos     = (0, 0)
+      , scrollX           = scrollX'
+      , scrollY           = scrollY'
+      , lastSample        = 0
+      , fps               = 0
+      , animationRunning  = animation
+      , animationForward  = True
+      , animationTime     = animationInitTime
+      , rotationRunning   = rotation
+      , rotationAngle     = rotationInitAngle
+      , shouldClose       = False
+      , conf              = config
+      , objectScale       = (1/s)
+      , windowWidth       = 0
+      , windowHeight      = 0
+      , shaderName        = "default"
+      , shaderFlatNormals = True
       }
 
 loop
-  :: forall os .  Window os RGBFloat Depth
-  -> (ShaderEnvironment -> Render os ())
+  :: forall os .  Window os RGBAFloat Depth
+  -> (ShaderEnvironment os -> Render os ())
   -> Buffer os PrimitiveBuffer
-  -> Buffer os (Uniform UniformBuffer)
+  -> Uniforms os
   -> ViewerState
   -> ContextT GLFW.Handle os IO ()
-loop win shader triangles uniform viewerState = do
+loop win shader triangles unionBuffers@Uniforms{..} viewerState = do
 
   newViewerState@ViewerState{..} <- updateViewerState win viewerState
   let ViewerConf{..} = conf
@@ -195,11 +197,16 @@ loop win shader triangles uniform viewerState = do
         mkScaleTransform camZoom
 
       viewMat = cameraMatrix
+      newEye = inv44 cameraMatrix !* V4 0 0 0 1
       viewProjMat = projMat !*! viewMat !*! modelMat
       normMat = modelRot
 
-  -- Write this frames uniform value
-  writeBuffer uniform 0 [(viewProjMat, normMat)]
+  liftIO $ print (fps, shaderName)
+  -- Write this frames uniform values
+  writeBuffer bMvpMat   0 [viewProjMat]
+  writeBuffer bModelMat 0 [modelMat]
+  writeBuffer bNormMat  0 [normMat]
+  writeBuffer bEye      0 [normalizePoint newEye]
 
   triangles' <- case animation of
     False -> return triangles
@@ -229,13 +236,17 @@ loop win shader triangles uniform viewerState = do
           , ViewPort 0 (V2 windowWidth windowHeight)
           , DepthRange 0 1
           )
+          shaderName
+          unionBuffers
+          shaderFlatNormals
+
   swapWindowBuffers win
 
   unless shouldClose
-    $ loop win shader triangles' uniform newViewerState
+    $ loop win shader triangles' unionBuffers newViewerState
 
 updateViewerState
-  :: forall os .  Window os RGBFloat Depth
+  :: forall os .  Window os RGBAFloat Depth
   -> ViewerState
   -> ContextT GLFW.Handle os IO ViewerState
 updateViewerState win oldViewerState@ViewerState{..} = do
@@ -257,7 +268,6 @@ updateViewerState win oldViewerState@ViewerState{..} = do
 
       dt = now - lastSample
 
-
   qKey <- GLFW.getKey win GLFW.Key'Q
   winShouldClose <- GLFW.windowShouldClose win
   let shouldClose' =
@@ -277,6 +287,22 @@ updateViewerState win oldViewerState@ViewerState{..} = do
         Just GLFW.KeyState'Pressed -> (*10)
         _ -> id
 
+  wKey <- GLFW.getKey win GLFW.Key'W
+  let nextShader = case wKey of
+        Just GLFW.KeyState'Pressed ->
+          let cur = Data.Map.findIndex shaderName allShaders
+          in  fst
+            $ Data.Map.elemAt
+                ((cur + 1) `mod` Data.Map.size allShaders)
+                allShaders
+        _ -> shaderName
+
+  tildeKey <- GLFW.getKey win GLFW.Key'GraveAccent
+  let toggleNormals = case tildeKey of
+        Just GLFW.KeyState'Pressed -> not shaderFlatNormals
+        _ -> shaderFlatNormals
+
+  _mdX <- liftIO $ tryTakeMVar scrollX
   mdY <- liftIO $ tryTakeMVar scrollY
   let newZoom = case mdY of
                   Nothing -> camZoom
@@ -285,7 +311,7 @@ updateViewerState win oldViewerState@ViewerState{..} = do
       animDirection = if animationForward then 1
                                           else -1
       animTime =
-        if animation then animationTime + (faster $ animDirection * animationStep)
+        if animationRunning then animationTime + (faster $ animDirection * animationStep)
                      else animationTime
 
       nextOutOfBounds =
@@ -297,17 +323,19 @@ updateViewerState win oldViewerState@ViewerState{..} = do
                     else rotationAngle
 
   return $ oldViewerState {
-      camPitch         = (dPitch + camPitch) `mod''` (2*pi)
-    , camYaw           = (dYaw + camYaw) `mod''` (2*pi)
-    , camZoom          = newZoom
-    , lastCursorPos    = (realToFrac cursorX, realToFrac cursorY)
-    , windowWidth      = w
-    , windowHeight     = h
-    , lastSample       = now
-    , fps              = 1 / dt
-    , animationRunning = not nextOutOfBounds || (nextOutOfBounds && animationBounce)
-    , animationTime    = animTime
-    , animationForward = (if nextOutOfBounds then not else id) animationForward
-    , rotationAngle    = rotAngle
-    , shouldClose      = shouldClose'
+      camPitch          = (dPitch + camPitch) `mod''` (2*pi)
+    , camYaw            = (dYaw + camYaw) `mod''` (2*pi)
+    , camZoom           = newZoom
+    , lastCursorPos     = (realToFrac cursorX, realToFrac cursorY)
+    , windowWidth       = w
+    , windowHeight      = h
+    , lastSample        = now
+    , fps               = 1 / dt
+    , animationRunning  = animationRunning && not nextOutOfBounds || (nextOutOfBounds && animationBounce)
+    , animationTime     = animTime
+    , animationForward  = (if nextOutOfBounds then not else id) animationForward
+    , rotationAngle     = rotAngle
+    , shouldClose       = shouldClose'
+    , shaderName        = nextShader
+    , shaderFlatNormals = toggleNormals
     }
