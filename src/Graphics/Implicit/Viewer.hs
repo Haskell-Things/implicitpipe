@@ -186,12 +186,10 @@ loop win shader triangles unionBuffers@Uniforms{..} viewerState = do
           lookAtPoint
           (V3 0 0 1) -- up vector
         !*!
-        mkTransformation
-          (axisAngle (V3 1 0 0) (camPitch))
-          (pure 0)
-        !*!
-        mkTransformation
-          (axisAngle (V3 0 0 1) (camYaw))
+        mkTransformation (
+            axisAngle (V3 1 0 0) (camPitch)
+          * axisAngle (V3 0 0 1) (camYaw)
+          )
           (pure 0)
         !*!
         mkScaleTransform camZoom
