@@ -1,1 +1,1 @@
-(import ./default.nix).env
+(import ./default.nix {}).passthru.pkg.env
