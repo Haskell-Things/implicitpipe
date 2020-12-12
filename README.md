@@ -14,7 +14,11 @@ Based on [GPipe-Test](https://github.com/plredmond/GPipe-Test)
 * `nix-build`
 * `./result/bin/implicitview examples-haskell/SomeModule.hs`
 
-or enter development shell using `nix-shell` where you can use `cabal run implicitview` or `cabal repl`.
+or enter development shell using `nix-shell` where you can use
+```
+cabal run implicitview
+```
+or `cabal repl`.
 
 ### With Stack
 
@@ -41,7 +45,7 @@ or ExtOpenSCAD variant:
 implicitview examples-escad/obj.escad
 ```
 
-While the application is running you can open the rendered file
+While the application is running you can open the source file
 in your editor and it will automatically reload the preview on saves.
 
 Haskell loader expects `obj :: SymbolicObj3` variable and optionally
@@ -79,7 +83,7 @@ holding space increases animation speed.
 * `Tab` switches to next shader
 * `R` toggles autorotation
 * `C` toggles autoscaling of object on reloads
-* 'Q' for quit
+* `Q` for quit
 
 ## REPL Usage
 
@@ -121,3 +125,14 @@ to use composable `Animation` wrapper similar to
 
 [![implicitanim](./img/anim_smaller.gif)](https://raw.githubusercontent.com/sorki/implicitpipe/master/img/anim_smaller.gif)
 
+### `example-haskell` object with edges shader
+
+[![edges](./img/scene_edges.png)](https://raw.githubusercontent.com/sorki/implicitpipe/master/img/scene_edges.gif)
+
+### `example-haskell` wireframe shader
+
+[![wireframe](./img/scene_wire.png)](https://raw.githubusercontent.com/sorki/implicitpipe/master/img/scene_wire.gif)
+
+### `demoLetterI` with smoothed normals
+
+[![smoothed demo letter](./img/i_smoothed_thumb.png)](https://raw.githubusercontent.com/sorki/implicitpipe/master/img/i_smoothed_thumb.png)
