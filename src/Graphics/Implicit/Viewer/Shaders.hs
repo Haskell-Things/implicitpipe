@@ -17,31 +17,31 @@ type ShaderVertexInfo = VertexInfo (V3 FFloat) (V3 FFloat) (V3 FFloat) (V4 FFloa
 type FragStream = FragmentStream ShaderVertexInfo
 
 allShaders
-  :: Map String (Window os RGBAFloat Depth
-  -> FragStream
-  -> Shader os (ShaderEnvironment os) ())
-allShaders = Data.Map.fromList
-  [ s "default"    (lightShaded 0.3)
-  , s "nospecular" (lightShaded 0)
+  :: Map Int ((String, Window os RGBAFloat Depth
+                        -> FragStream
+                        -> Shader os (ShaderEnvironment os) ()))
+allShaders = Data.Map.fromList $ zip [0..]
+  [ s "default"    (lightShaded 0.1)
   , s "wireframe"  alphaWireframe
   , s "edges"      edges
   , s "edgy"       edgy
   , s "pointy"     pointy
+  , s "nospecular" (lightShaded 0)
   ]
   where s = (,)
 
-asumShaderByName
+asumShaderByID
   :: forall os
-   . ((ShaderEnvironment os) -> String)
+   . ((ShaderEnvironment os) -> Int)
   -> Window os RGBAFloat Depth
   -> FragStream
   -> Shader os (ShaderEnvironment os) ()
-asumShaderByName getNameFromState win fragStream =
+asumShaderByID getIDFromState win fragStream =
     asum
   $ Data.Map.mapWithKey guardByName allShaders
   where
-    guardByName name shader = do
-      guard' ((==name) . getNameFromState)
+    guardByName sid (_name, shader) = do
+      guard' ((==sid) . getIDFromState)
       shader win fragStream
 
 computeLight :: FFloat -> V3 FFloat -> ShaderVertexInfo -> V4 FFloat

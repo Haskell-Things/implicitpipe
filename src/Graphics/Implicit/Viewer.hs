@@ -10,28 +10,30 @@ module Graphics.Implicit.Viewer (
   , view
   , viewer
   , ViewerConf(..)
+  , parseViewerConf
   , animateMain
-  , viewerMain
+  , eval
+  , def
   ) where
 
 import Control.Applicative
-import Control.Concurrent.MVar
+import Control.Concurrent.STM
 import Control.Monad
 import Control.Monad.IO.Class
 
 import Data.Default
 import qualified Data.Map
 
-import Graphics.GPipe hiding ((^-^), rotate)
+import Graphics.GPipe hiding ((^-^), rotate, mod')
 import Graphics.UI.GLFW (WindowHint(..))
 import qualified "GPipe-GLFW" Graphics.GPipe.Context.GLFW as GLFW
 
 import Graphics.Implicit
-import Graphics.Implicit.Primitives (getBox)
-import Graphics.Implicit.Export.GL
+import Graphics.Implicit.Viewer.Loaders
 import Graphics.Implicit.Viewer.Shaders
 import Graphics.Implicit.Viewer.Types
 import Graphics.Implicit.Viewer.Util
+import Graphics.Implicit.Viewer.Demos
 
 -- | View `SymbolicObj3` object using OpenGL viewer
 view :: SymbolicObj3 -> IO ()
@@ -44,11 +46,8 @@ view o = viewer $ object o
 animate :: (Double -> SymbolicObj3) -> IO ()
 animate a = viewer $ animated a
 
-viewerMain :: IO ()
-viewerMain = viewer $ rotating def
-
 animateMain :: IO ()
-animateMain = viewer $ preview $ zoom 2 $ animated (obj def)
+animateMain = viewer $ preview $ zoom 2 $ animated demoLetterI
 
 -- | Configurable viewer
 --
@@ -57,25 +56,22 @@ animateMain = viewer $ preview $ zoom 2 $ animated (obj def)
 --
 viewer :: ViewerConf -> IO ()
 viewer config@ViewerConf{..} = do
-  let
-      (ba, bb) = getBox (obj 0)
-      rmax (x, y, z) = maximum [x, y, z]
+  eventChan  <- newTChanIO :: IO (TChan Event)
+  renderChan <- newTChanIO :: IO (TChan Rendered)
+  animationTimeVar <- newTVarIO 0 :: IO (TVar Double)
 
-      -- ratio perserving scaling
-      s = realToFrac $ rmax (bb - ba)
-
-  scrollX' <- newMVar 0
-  scrollY' <- newMVar 0
+  case obj of
+    Just o  -> do
+      renderObjToChan (o 0) initResolution renderChan
+      when animation $ runAnimation o initResolution renderChan animationTimeVar
+    Nothing -> return ()
+  case moduleFile of
+    Just f  -> runUpdater f initResolution renderChan
+    Nothing -> return ()
 
   runContextT GLFW.defaultHandleConfig $ do
-    let iniMesh =
-            meshToGL
-          $ meshFunFromResolution resolution 0 (obj 0)
-
     triangles :: Buffer os PrimitiveBuffer
-      <- newBuffer $ length $ iniMesh
-
-    writeBuffer triangles 0 iniMesh
+      <- newBuffer 0
 
     win <- newWindow
       (WindowFormatColorDepth RGBA8 Depth16)
@@ -83,11 +79,7 @@ viewer config@ViewerConf{..} = do
         { GLFW.configHints = [ WindowHint'Samples $ Just 16 ] }
       )
 
-    -- Try updating scrolling vars
-    void . GLFW.setScrollCallback win . pure $
-        \dx dy -> do
-          void $ tryPutMVar scrollX' (realToFrac dx)
-          void $ tryPutMVar scrollY' (realToFrac dy)
+    setupCallbacks win eventChan
 
     -- Create a buffer for the uniform values
     unionBuffers <- Uniforms
@@ -127,19 +119,23 @@ viewer config@ViewerConf{..} = do
                 shaderEnvRasterOptions
                 (proj id <$> primitiveStream)
 
-      asumShaderByName shaderEnvFragName win fragmentStream
+      asumShaderByID shaderEnvFragID win fragmentStream
 
     -- Run the loop
-    loop win shader triangles
-      --(Uniforms mvpMatBuffer normMatBuffer eyeBuffer)
+    loop
+      win
+      shader
+      triangles
       unionBuffers
+      animationTimeVar
+      eventChan
+      renderChan
       ViewerState {
         camYaw            = 0
       , camPitch          = 0
       , camZoom           = initZoom
-      , lastCursorPos     = (0, 0)
-      , scrollX           = scrollX'
-      , scrollY           = scrollY'
+      , camRotating       = False
+      , lastCursorPos     = pure 0
       , lastSample        = 0
       , fps               = 0
       , animationRunning  = animation
@@ -149,10 +145,10 @@ viewer config@ViewerConf{..} = do
       , rotationAngle     = rotationInitAngle
       , shouldClose       = False
       , conf              = config
-      , objectScale       = (1/s)
-      , windowWidth       = 0
-      , windowHeight      = 0
-      , shaderName        = "default"
+      , objectScale       = Nothing
+      , autoScale         = False
+      , windowSize        = pure 0
+      , shaderID          = 0
       , shaderFlatNormals = True
       }
 
@@ -161,18 +157,37 @@ loop
   -> (ShaderEnvironment os -> Render os ())
   -> Buffer os PrimitiveBuffer
   -> Uniforms os
+  -> TVar Double
+  -> TChan Event
+  -> TChan Rendered
   -> ViewerState
   -> ContextT GLFW.Handle os IO ()
-loop win shader triangles unionBuffers@Uniforms{..} viewerState = do
+loop win shader triangles unionBuffers@Uniforms{..} aTime eventChan renderChan viewerState = do
+  (triangles', scaledViewerState) <- do
+    mx <- liftIO $ atomically $ tryReadTChan renderChan
+    case mx of
+      Just (len, objScale, tris) -> do
+        triangles' <- resizeBuffer triangles len
+        writeBuffer triangles' 0 tris
+        return (triangles', case autoScale viewerState of
+          True -> viewerState { objectScale = Just $ 1 / objScale }
+          False -> viewerState { objectScale = Just $ maybe (1 / objScale) id (objectScale viewerState) })
+      Nothing -> do
+        return (triangles, viewerState)
 
-  newViewerState@ViewerState{..} <- updateViewerState win viewerState
+  newViewerState@ViewerState{..} <- updateViewerState win eventChan scaledViewerState
+
+  -- update TVar so runAnimation can grab it
+  liftIO $ atomically $ writeTVar aTime (realToFrac animationTime)
+
   let ViewerConf{..} = conf
 
-  let modelRot = fromQuaternion (axisAngle (V3 0 0 1) (-rotationAngle))
+  let V2 windowWidth windowHeight = windowSize
+      modelRot = fromQuaternion (axisAngle (V3 0 0 1) (-rotationAngle))
 
       modelMat =
             mkTransformationMat modelRot (pure 0)
-        !*! mkScaleTransform objectScale
+        !*! mkScaleTransform (maybe 1 id objectScale)
 
       projMat = perspective (pi/2) (fromIntegral windowWidth / fromIntegral windowHeight) 0.1 100
 
@@ -199,26 +214,12 @@ loop win shader triangles unionBuffers@Uniforms{..} viewerState = do
       viewProjMat = projMat !*! viewMat !*! modelMat
       normMat = modelRot
 
-  liftIO $ print (fps, shaderName)
+  when debug $ liftIO $ putStrLn $ "FPS: " ++ show fps
   -- Write this frames uniform values
   writeBuffer bMvpMat   0 [viewProjMat]
   writeBuffer bModelMat 0 [modelMat]
   writeBuffer bNormMat  0 [normMat]
   writeBuffer bEye      0 [normalizePoint newEye]
-
-  triangles' <- case animation of
-    False -> return triangles
-    True -> do
-      let mesh = meshToGL
-               $ meshFunFromResolution
-                   resolution
-                   (realToFrac animationTime)
-               $ obj
-                   (realToFrac animationTime)
-
-      triangles' <- resizeBuffer triangles (length mesh)
-      writeBuffer triangles' 0 mesh
-      return triangles'
 
   -- Render the frame and present the results
   render $ do
@@ -231,109 +232,142 @@ loop win shader triangles unionBuffers@Uniforms{..} viewerState = do
       $ ShaderEnvironment
           primitiveArray
           ( FrontAndBack
-          , ViewPort 0 (V2 windowWidth windowHeight)
+          , ViewPort 0 windowSize
           , DepthRange 0 1
           )
-          shaderName
+          shaderID
           unionBuffers
           shaderFlatNormals
 
   swapWindowBuffers win
 
   unless shouldClose
-    $ loop win shader triangles' unionBuffers newViewerState
+    $ loop win shader triangles' unionBuffers aTime eventChan renderChan newViewerState
 
 updateViewerState
   :: forall os .  Window os RGBAFloat Depth
+  -> TChan Event
   -> ViewerState
   -> ContextT GLFW.Handle os IO ViewerState
-updateViewerState win oldViewerState@ViewerState{..} = do
-  let ViewerConf{..} = conf
+updateViewerState win chan oldState = do
+  let ViewerConf{..} = conf oldState
 
   (Just now) <- liftIO $ GLFW.getTime
+  let dt = realToFrac now - lastSample oldState
+      V2 oldCursorX oldCursorY = lastCursorPos oldState
 
-  mCursor <- GLFW.getCursorPos win
+  let handleEvents s@ViewerState{..} = do
+        emptyChan <- liftIO $ atomically $ isEmptyTChan chan
+        if emptyChan then return s
+        else do
+          msg <- liftIO $ atomically $ readTChan chan
+          handleEvents $ case msg of
+            Cursor x
+              -> case camRotating of
+                  False -> s { lastCursorPos = x }
+                  True ->
+                    let
+                      V2 cursorX cursorY = lastCursorPos
+                    in
+                      s { lastCursorPos = x
+                        , camPitch = ((realToFrac $ cursorY - oldCursorY) / 100 + camPitch) `mod''` (2*pi)
+                        , camYaw = ((realToFrac $ cursorX - oldCursorX) / 100 + camYaw) `mod''` (2*pi)
+                        }
+            LeftMouse x
+              -> s { camRotating = x }
+            SwitchShader to
+              -> s { shaderID = to }
+            NextShader
+              -> s { shaderID = nextInMap shaderID allShaders }
+            ToggleFlatNormals
+              -> s { shaderFlatNormals = not shaderFlatNormals }
+            ToggleAutoRotate
+              -> s { rotationRunning = not rotationRunning }
+            ToggleAutoScale
+              -> s { autoScale = not autoScale }
+            Zoom z
+              -> s { camZoom = camZoom + (z/10) }
+            WindowSize x
+              -> s { windowSize = x }
+            Quit
+              -> s { shouldClose = True }
 
-  let (cursorX, cursorY) = case mCursor of
-        Just r -> r
-        Nothing -> (0, 0)
-
-      (oldCursorX, oldCursorY) = lastCursorPos
-
-      (cursorDeltaX, cursorDeltaY) =
-        ( realToFrac cursorX - oldCursorX
-        , realToFrac cursorY - oldCursorY)
-
-      dt = now - lastSample
-
-  qKey <- GLFW.getKey win GLFW.Key'Q
-  winShouldClose <- GLFW.windowShouldClose win
-  let shouldClose' =
-           (winShouldClose == Just True)
-        || (qKey == Just GLFW.KeyState'Pressed)
-
-  (V2 w h) <- getFrameBufferSize win
-
-  mouseButton1 <- GLFW.getMouseButton win GLFW.MouseButton'1
-  let (dYaw, dPitch) = case mouseButton1 of
-        Just GLFW.MouseButtonState'Pressed
-          -> (cursorDeltaX / 100, cursorDeltaY / 100)
-        _ -> (0, 0)
+  newState@ViewerState{..} <- handleEvents oldState
 
   spaceKey <- GLFW.getKey win GLFW.Key'Space
   let faster = case spaceKey of
         Just GLFW.KeyState'Pressed -> (*10)
         _ -> id
 
-  wKey <- GLFW.getKey win GLFW.Key'W
-  let nextShader = case wKey of
-        Just GLFW.KeyState'Pressed ->
-          let cur = Data.Map.findIndex shaderName allShaders
-          in  fst
-            $ Data.Map.elemAt
-                ((cur + 1) `mod` Data.Map.size allShaders)
-                allShaders
-        _ -> shaderName
-
-  tildeKey <- GLFW.getKey win GLFW.Key'GraveAccent
-  let toggleNormals = case tildeKey of
-        Just GLFW.KeyState'Pressed -> not shaderFlatNormals
-        _ -> shaderFlatNormals
-
-  _mdX <- liftIO $ tryTakeMVar scrollX
-  mdY <- liftIO $ tryTakeMVar scrollY
-  let newZoom = case mdY of
-                  Nothing -> camZoom
-                  Just dy -> camZoom + (dy/10)
-
       animDirection = if animationForward then 1
                                           else -1
       animTime =
-        if animationRunning then animationTime + (faster $ animDirection * animationStep)
-                     else animationTime
+        if animationRunning
+             then animationTime + (faster $ animDirection * animationStep)
+             else animationTime
 
       nextOutOfBounds =
                animationForward && animationTime + animationStep > 1
         || not animationForward && animationTime - animationStep < 0
 
       rotAngle =
-        if rotation then (rotationAngle + faster rotationStep) `mod''` (2*pi)
-                    else rotationAngle
+        if rotationRunning
+             then (rotationAngle + faster rotationStep) `mod''` (2*pi)
+             else rotationAngle
 
-  return $ oldViewerState {
-      camPitch          = (dPitch + camPitch) `mod''` (2*pi)
-    , camYaw            = (dYaw + camYaw) `mod''` (2*pi)
-    , camZoom           = newZoom
-    , lastCursorPos     = (realToFrac cursorX, realToFrac cursorY)
-    , windowWidth       = w
-    , windowHeight      = h
-    , lastSample        = now
+  return $ newState
+    { lastSample        = realToFrac now
     , fps               = 1 / dt
     , animationRunning  = animationRunning && not nextOutOfBounds || (nextOutOfBounds && animationBounce)
     , animationTime     = animTime
     , animationForward  = (if nextOutOfBounds then not else id) animationForward
     , rotationAngle     = rotAngle
-    , shouldClose       = shouldClose'
-    , shaderName        = nextShader
-    , shaderFlatNormals = toggleNormals
     }
+
+-- | Setup GLFW callbacks pumping events to event channel
+setupCallbacks
+ :: MonadIO m
+ => Window os c ds
+ -> TChan Event
+ -> ContextT GLFW.Handle os m ()
+setupCallbacks win chan = do
+  void $ GLFW.setWindowSizeCallback win . pure $
+    \w h -> do
+      atomically $ writeTChan chan $ WindowSize $ V2 w h
+
+  void $ GLFW.setWindowCloseCallback win . pure $
+    atomically $ writeTChan chan Quit
+
+  void $ GLFW.setScrollCallback win . pure $
+    \_dx dy -> do
+      atomically $ writeTChan chan $ Zoom $ realToFrac dy
+
+  void $ GLFW.setCursorPosCallback win . pure $
+    \x y -> do
+      atomically $ writeTChan chan $ Cursor (V2 x y)
+
+  void $ GLFW.setMouseButtonCallback win . pure $
+    \button buttonState _modifierKeys -> do
+      when (button == GLFW.MouseButton'1) $ do
+        atomically $ writeTChan chan $ LeftMouse
+          (buttonState == GLFW.MouseButtonState'Pressed)
+
+  let keyMap = Data.Map.fromList $
+        [ (GLFW.Key'N           , ToggleFlatNormals)
+        , (GLFW.Key'GraveAccent , ToggleFlatNormals)
+        , (GLFW.Key'C           , ToggleAutoScale)
+        , (GLFW.Key'R           , ToggleAutoRotate)
+        , (GLFW.Key'Q           , Quit)
+        , (GLFW.Key'Tab         , NextShader)
+        ]
+        ++
+        (zip
+          [ GLFW.Key'1 .. GLFW.Key'9 ]
+          $ map SwitchShader (Data.Map.keys allShaders))
+
+  void $ GLFW.setKeyCallback win . pure $
+    \key _i keyState _modifierKeys -> do
+      when (keyState == GLFW.KeyState'Pressed) $ do
+        case Data.Map.lookup key keyMap of
+          Just message -> atomically $ writeTChan chan message
+          _ -> return ()

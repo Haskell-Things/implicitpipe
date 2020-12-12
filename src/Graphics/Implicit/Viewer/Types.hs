@@ -8,16 +8,18 @@
 module Graphics.Implicit.Viewer.Types
   ( PrimitiveBuffer
   , VertexInfo(..)
+  , NativeVertexInfo
+  , Rendered
   , ShaderEnvironment(..)
   , Uniforms(..)
   , ViewerState(..)
+  , Event(..)
   , getUni
   , module Graphics.Implicit.Viewer.Config
   ) where
 
 
 import Control.Arrow
-import Control.Concurrent.MVar (MVar)
 import Graphics.GPipe
 import Graphics.Implicit.Viewer.Config
 
@@ -41,6 +43,7 @@ data VertexInfo posType normalType barType colorType = VertexInfo
   , viBarycentric :: barType
   , viColor       :: colorType
   }
+  deriving Show
 
 data Uniforms os = Uniforms
   { bMvpMat   :: Buffer os (Uniform (V4 (B4 Float)))
@@ -54,7 +57,7 @@ getUni which = getUniform (\state -> (which $ shaderEnvUniforms state, 0))
 data ShaderEnvironment os = ShaderEnvironment
   { shaderEnvTriangles     :: PrimitiveArray Triangles PrimitiveBuffer
   , shaderEnvRasterOptions :: (Side, ViewPort, DepthRange)
-  , shaderEnvFragName      :: String
+  , shaderEnvFragID        :: Int -- fragment shader ID
   , shaderEnvUniforms      :: Uniforms os
   , shaderEnvFlatNormals   :: Bool
   }
@@ -63,13 +66,11 @@ data ViewerState = ViewerState {
     camYaw            :: Float
   , camPitch          :: Float
   , camZoom           :: Float
-  , lastCursorPos     :: (Float, Float)
-  , scrollX           :: MVar Float
-  , scrollY           :: MVar Float
-  , windowWidth       :: Int
-  , windowHeight      :: Int
-  , lastSample        :: Double
-  , fps               :: Double
+  , camRotating       :: Bool
+  , lastCursorPos     :: V2 Double
+  , windowSize        :: V2 Int
+  , lastSample        :: Float
+  , fps               :: Float
   , animationRunning  :: Bool
   , animationForward  :: Bool
   , animationTime     :: Float
@@ -77,10 +78,28 @@ data ViewerState = ViewerState {
   , rotationAngle     :: Float
   , shouldClose       :: Bool
   , conf              :: ViewerConf
-  , objectScale       :: Float
-  , shaderName        :: String
+  , objectScale       :: Maybe Float
+  , autoScale         :: Bool
+  , shaderID          :: Int
   , shaderFlatNormals :: Bool
   }
+
+data Event =
+    SwitchShader Int
+  | NextShader
+  | ToggleFlatNormals
+  | ToggleAutoRotate
+  | ToggleAutoScale
+  | Zoom Float
+  | Cursor (V2 Double)
+  | LeftMouse Bool
+  | WindowSize (V2 Int)
+  | Quit
+  deriving (Eq, Show, Ord)
+
+type NativeVertexInfo = VertexInfo (V3 Float) (V3 Float) (V3 Float) (V4 Float)
+
+type Rendered = (Int, Float, [(V3 Float, NativeVertexInfo)])
 
 -- Instances for `VertexInfo` so it can be used
 -- in shaders.

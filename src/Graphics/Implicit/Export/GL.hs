@@ -1,14 +1,17 @@
 module Graphics.Implicit.Export.GL where
 
-import Linear (V3(..), V4(..))
+import Linear (V4(..))
 
 import Graphics.Implicit
 import Graphics.Implicit.Definitions
 import Graphics.Implicit.Export.DiscreteAproxable
 import Graphics.Implicit.Viewer.Types
 
-type NativeVertexInfo = VertexInfo (V3 Float) (V3 Float) (V3 Float) (V4 Float)
-
+-- | Render `SymbolicObj3` to our GPipe pipeline datatype
+--
+-- objToGL used to return just [(V3 Float, V3 Float)] for positions and normals
+-- but grew additional info like barycentric coordinates and color
+-- which are needed later in our pipeline
 objToGL
   :: Double
   -> SymbolicObj3
@@ -23,9 +26,9 @@ meshToGL
   -> [(V3 Float, NativeVertexInfo)]
 meshToGL (NormedTriangleMesh ts) =
   concatMap
-    (\(NormedTriangle (a, b, c)) -> zipWith toV3Pair [a, b, c] barycentric) ts
+    (\(NormedTriangle (a, b, c)) -> zipWith convert [a, b, c] barycentric) ts
   where
-    toV3Pair ((x, y, z), (xn, yn, zn)) bar =
+    convert ((V3 x y z), (V3 xn yn zn)) bar =
       ( realToFrac <$> V3 x y z
       , VertexInfo {
           viPos         = realToFrac <$> (V3 x y z)
