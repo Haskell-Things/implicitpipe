@@ -80,6 +80,12 @@ viewer config@ViewerConf{..} = do
       )
 
     setupCallbacks win eventChan
+    -- Get and forward window size right after initialization
+    -- so we don't wait for callback to set it
+    ws <- GLFW.getWindowSize win
+    case ws of
+      Just (w, h) -> liftIO $ atomically $ writeTChan eventChan $ WindowSize $ V2 w h
+      _           -> return ()
 
     -- Create a buffer for the uniform values
     unionBuffers <- Uniforms
