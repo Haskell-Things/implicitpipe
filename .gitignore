@@ -3,6 +3,9 @@ dist/
 dist-newstyle/
 result
 .stack-work/
+stack.yaml.lock
+*.stl
+*.lock
 *.swp
 *.eventlog
 *.eventlog.json
