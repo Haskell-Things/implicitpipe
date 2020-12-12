@@ -1,0 +1,57 @@
+# For more information, see: https://github.com/commercialhaskell/stack/blob/master/doc/yaml_configuration.md
+
+# Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
+
+resolver: lts-16.25
+
+# Local packages, usually specified by relative directory name
+packages:
+- .
+
+# Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
+extra-deps:
+- storable-endian-0.2.6
+- quickspec-2.1.5@sha256:1d1cc020fa9075cb5fafd4056fe1d930d5763b954fa8200e57ce6aba057544b2,3557
+- twee-lib-2.2@sha256:9fe9327505d8f450a94f2fc9eea74b292901b7992d520aa1dd4f0410fbe0e594,2112
+- git: git@github.com:sorki/GPipe-Core
+  commit: 86a7b29014e7ebfb24ac17d5afcd877a38a1fbd5
+  subdirs:
+  - GPipe-Core
+- git: git@github.com:plredmond/GPipe-GLFW
+  commit: 83d26eb7b41d67f5ac6fbd1bd8758d72c660e039
+  subdirs:
+  - GPipe-GLFW
+- git: git@github.com:colah/ImplicitCAD
+  commit: 8dff5531cdc4d9ed32bf958e3945b4a3a0ef3774
+
+# Override default flag values for local packages and extra-deps
+flags: {}
+
+# Control whether we use the GHC we find on the path
+# system-ghc: true
+nix:
+    # Enable if you want to use Stack with Nix backend
+    # enable: true
+    packages:
+    - zlib
+    - libGL
+    - xorg.libX11
+    - xorg.libXcursor
+    - xorg.libXext
+    - xorg.libXfixes
+    - xorg.libXi
+    - xorg.libXinerama
+    - xorg.libXrandr
+    - xorg.libXxf86vm
+
+# Require a specific version of stack, using version ranges
+# require-stack-version: -any # Default
+# require-stack-version: >= 0.1.4.0
+
+# Override the architecture used by stack, especially useful on Windows
+# arch: i386
+# arch: x86_64
+
+# Extra directories used by stack for building
+# extra-include-dirs: [/path/to/dir]
+# extra-lib-dirs: [/path/to/dir]
