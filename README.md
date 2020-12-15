@@ -1,5 +1,7 @@
 # implicitpipe
 
+[![IRC](https://img.shields.io/badge/irc.freenode.net-%23ImplicitCAD-blue.svg)](https://freenode.net/)
+
 OpenGL 3D viewer for [ImplicitCAD](https://github.com/colah/ImplicitCAD).
 
 Allows quick preview of ImplicitCAD `SymbolicObj3` objects by transforming
