@@ -16,3 +16,6 @@ obj = union $ [
   , translate (V3 25 0 0) (cylinder2 10 4 10)
   , translate (V3 (-25) 0 0) obj'
   ]
+
+main :: IO ()
+main = writeSTL res "example.stl" obj
