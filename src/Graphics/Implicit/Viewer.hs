@@ -25,8 +25,9 @@ import Data.Default
 import qualified Data.Map
 
 import Graphics.GPipe hiding ((^-^), rotate, mod')
+import Graphics.GPipe.Buffer (resizeBuffer)
 import Graphics.UI.GLFW (WindowHint(..))
-import qualified "GPipe-GLFW" Graphics.GPipe.Context.GLFW as GLFW
+import qualified Graphics.GPipe.Context.GLFW as GLFW
 
 import Graphics.Implicit
 import Graphics.Implicit.Viewer.Loaders
@@ -238,6 +239,7 @@ loop win shader triangles unionBuffers@Uniforms{..} aTime eventChan renderChan v
       $ ShaderEnvironment
           primitiveArray
           ( FrontAndBack
+          , PolygonFill
           , ViewPort 0 windowSize
           , DepthRange 0 1
           )
