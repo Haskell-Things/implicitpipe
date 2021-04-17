@@ -81,8 +81,9 @@ loadByExtension
   -> IO ()
 loadByExtension f initialResolution renderChan
   | ".hs"    `isSuffixOf` f = loadViaHint f initialResolution renderChan
+  | ".scad"  `isSuffixOf` f = loadViaEscad f initialResolution renderChan
   | ".escad" `isSuffixOf` f = loadViaEscad f initialResolution renderChan
-loadByExtension f _ _ = putStrLn $ "Don't know how to load " ++ f ++ ", I only know how render .hs and .escad"
+loadByExtension f _ _ = putStrLn $ "Don't know how to load " ++ f ++ ", I only know how render .hs, .scad and .escad"
 
 loadViaHint
   :: FilePath
