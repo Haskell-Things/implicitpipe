@@ -2,3 +2,5 @@ include <header.escad>;
 $res = 1;
 cube ($size);
 translate([10, 10, 0]) cylinder (r=15, h=2);
+if ($viewer) { cube($size*2); }
+echo($size);

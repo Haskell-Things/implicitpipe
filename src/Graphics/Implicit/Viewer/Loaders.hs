@@ -144,7 +144,7 @@ loadViaEscad modFile initialResolution renderChan = do
       openScadCompatibility = False
     , importsAllowed = True
     })
-    [] -- defines
+    ["$viewer = true;"] -- defines
     content
 
   case warnings of
