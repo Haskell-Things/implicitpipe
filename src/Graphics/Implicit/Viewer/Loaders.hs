@@ -157,7 +157,7 @@ loadViaEscad modFile initialResolution renderChan = do
         _ -> initialResolution
 
   renderObjToChan
-    (unionR 0 ((extrudeR 0 (unionR 0 objs2) 1):objs3))
+    (unionR 0 ((extrude (unionR 0 objs2) 1):objs3))
     res
     renderChan
 

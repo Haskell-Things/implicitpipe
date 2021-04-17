@@ -10,14 +10,14 @@ demoLetterI t =
     scale 2
   $ translate (V3 0 0 (-7))
   $ unionR 1
-  [ translate (V3 0 0 5) $ cubeR 1 True (V3 4 4 10)
+  [ translate (V3 0 0 5) $ withRounding 1 $ cube True (V3 4 4 10)
   , translate (V3 0 0 (13 - 13 * t)) $ sphere (3 + t)
   ]
 
 demoRotatingAnim :: Double -> SymbolicObj3
 demoRotatingAnim t =
     rotate3 (V3 0 0 (t*2*pi))
-  $ cylinder2 2 1 2 `ontop` cubeR 0 True (V3 6 6 2)
+  $ cylinder2 2 1 2 `ontop` cube True (V3 6 6 2)
 
 ontop :: SymbolicObj3 -> SymbolicObj3 -> SymbolicObj3
 ontop a b = union [ translate (V3 0 0 z) a, b ]
@@ -44,7 +44,7 @@ demoAnimSpheres t = union $ [
    translate (V3 s 0 0) (sphere (5 - s/5))
  , translate (V3 (-s) 0 0) (sphere (5 - s/5))
  , translate (V3 (-5-(s/2)) 0 0)
-    $ rotateExtrude (t * 360) (Just 0) (Left (V2 0 2)) (Left 0)
+    $ rotateExtrude (t * 360) (Left (V2 0 2)) (Left 0)
       $ translate (V2 4 0) $ circle 1
  , translate (V3 (-10) 20 0)
     $ rotate3 (V3 0 (t * 2 * pi) 0)
@@ -53,16 +53,16 @@ demoAnimSpheres t = union $ [
         , translate (V3 0 0 s) $ rotate3 (V3 pi 0 0) $  cylinder2 1 3 7 ]
  ] ++
    map (\x -> translate (V3 (5 + (fromIntegral x * 2)) 5 0)
-    (cubeR 0 False (V3 1 1 (fromIntegral x)))
+    (cube False (V3 1 1 (fromIntegral x)))
     ) [(0 :: Int)..(round s)]
   where s = (t*7) + 0.01 -- noglitchart
 
 demoScene :: SymbolicObj3
 demoScene = union $ [
-    cubeR 0 False (pure 20)
+    cube False (pure 20)
   , translate (pure 20) (sphere 15)
   , translate (V3 30 20 20) (sphere 5)
-  , translate (V3 0 0 25) (cubeR 2 False (pure 10))
+  , translate (V3 0 0 25) (withRounding 2 $ cube False (pure 10))
   , translate (V3 25 0 0) (cylinder2 10 1 100)
 --  , translate (V3 45 0 0) $ difference
 --      ( cylinder 5 (10) )
@@ -72,7 +72,7 @@ demoScene = union $ [
   -- https://github.com/colah/ImplicitCAD/issues/280
   -- , translate (V3 55 55 0) demoSymbolic
   ] ++
-  map (\x -> translate (V3 0 0 (20 + (10 - x) * 11)) (cubeR 0 False (pure $ 10 - x))) [0..9]
+  map (\x -> translate (V3 0 0 (20 + (10 - x) * 11)) (cube False (pure $ 10 - x))) [0..9]
 
 circ :: SymbolicObj2
 circ = implicit (\(V2 x y) -> x^(2 :: Int) + y^(2 :: Int) - 1)  (pure (-10), (pure 10))
@@ -91,7 +91,7 @@ sph = implicit (\(V2 x y) -> 10*x^(2 :: Int) + y^(2 :: Int) - 1) (pure (-10), (p
 -- Example:
 -- @
 --   cubeOSphere s n = mixed s
---    (cubeR 0 True (pure n))
+--    (cube True (pure n))
 --    (sphere (sqrt (3 * (n/2) ^2) ))
 -- @
 mixed
