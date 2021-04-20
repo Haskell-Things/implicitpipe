@@ -1,9 +1,9 @@
 
 module Graphics.Implicit.Viewer.Util where
 
-import Linear
 import Data.Map (Map)
 import qualified Data.Map
+import Linear
 
 mkScaleTransform :: Float -> M44 Float
 mkScaleTransform s =

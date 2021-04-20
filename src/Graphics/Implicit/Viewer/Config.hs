@@ -20,7 +20,7 @@ data Resolution =
 
 -- | Scale resolution by function
 apResolution :: (Double -> Double) -> Resolution -> Resolution
-apResolution f (Fixed n) = Fixed (f n)
+apResolution f (Fixed n)   = Fixed (f n)
 apResolution f (Varied f') = Varied $ f' . f
 
 meshFunFromResolution
@@ -28,7 +28,7 @@ meshFunFromResolution
   -> Double
   -> SymbolicObj3
   -> NormedTriangleMesh
-meshFunFromResolution (Fixed n) = const $ discreteAprox n
+meshFunFromResolution (Fixed n)  = const $ discreteAprox n
 meshFunFromResolution (Varied f) = f
 
 data ViewerConf = ViewerConf
