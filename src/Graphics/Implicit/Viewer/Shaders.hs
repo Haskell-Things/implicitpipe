@@ -1,15 +1,15 @@
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Graphics.Implicit.Viewer.Shaders where
 
-import Data.Map (Map)
-import qualified Data.Map
 import Data.Default
 import Data.Foldable
+import Data.Map (Map)
+import qualified Data.Map
 import Graphics.GPipe
 import Graphics.Implicit.Viewer.Types
 

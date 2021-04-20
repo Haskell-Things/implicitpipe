@@ -1,9 +1,9 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Graphics.Implicit.Viewer (
     animate
@@ -24,17 +24,17 @@ import Control.Monad.IO.Class
 import Data.Default
 import qualified Data.Map
 
-import Graphics.GPipe hiding ((^-^), rotate, mod')
+import Graphics.GPipe hiding (mod', rotate, (^-^))
 import Graphics.GPipe.Buffer (resizeBuffer)
-import Graphics.UI.GLFW (WindowHint(..))
 import qualified Graphics.GPipe.Context.GLFW as GLFW
+import Graphics.UI.GLFW (WindowHint (..))
 
 import Graphics.Implicit
+import Graphics.Implicit.Viewer.Demos
 import Graphics.Implicit.Viewer.Loaders
 import Graphics.Implicit.Viewer.Shaders
 import Graphics.Implicit.Viewer.Types
 import Graphics.Implicit.Viewer.Util
-import Graphics.Implicit.Viewer.Demos
 
 -- | View `SymbolicObj3` object using OpenGL viewer
 view :: SymbolicObj3 -> IO ()
@@ -305,7 +305,7 @@ updateViewerState win chan oldState = do
   spaceKey <- GLFW.getKey win GLFW.Key'Space
   let faster = case spaceKey of
         Just GLFW.KeyState'Pressed -> (*10)
-        _ -> id
+        _                          -> id
 
       animDirection = if animationForward then 1
                                           else -1
@@ -378,4 +378,4 @@ setupCallbacks win chan = do
       when (keyState == GLFW.KeyState'Pressed) $ do
         case Data.Map.lookup key keyMap of
           Just message -> atomically $ writeTChan chan message
-          _ -> return ()
+          _            -> return ()

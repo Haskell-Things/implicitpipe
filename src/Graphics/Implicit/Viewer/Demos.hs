@@ -1,9 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 module Graphics.Implicit.Viewer.Demos where
 
-import Linear
 import Graphics.Implicit
 import Graphics.Implicit.Primitives
+import Linear
 
 demoLetterI :: Double -> SymbolicObj3
 demoLetterI t =
