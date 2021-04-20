@@ -32,7 +32,7 @@ allShaders = Data.Map.fromList $ zip [0..]
 
 asumShaderByID
   :: forall os
-   . ((ShaderEnvironment os) -> Int)
+   . (ShaderEnvironment os -> Int)
   -> Window os RGBAFloat Depth
   -> FragStream
   -> Shader os (ShaderEnvironment os) ()
@@ -62,16 +62,16 @@ computeLight specularIntensity eye VertexInfo{..} =
       halfVector = signorm viewDir
       specular = maxB (viNormal `dot` halfVector) 0
   in
-   specularIntensity *^ (V4 1 1 1 1) ^* (specular ** 32)
+   specularIntensity *^ V4 1 1 1 1 ^* (specular ** 32)
      + (1 *^ opaque $
         0.1 -- global illumination
       + (
           -- red light from front right
-          (V3 0.8 0   0   ^* (maxB (normal `dot` dirR) 0))
+          (V3 0.8 0   0   ^* maxB (normal `dot` dirR) 0)
           -- green from front left
-        + (V3 0   0.8 0   ^* (maxB (normal `dot` dirG) 0))
+        + (V3 0   0.8 0   ^* maxB (normal `dot` dirG) 0)
           -- blue from bottom
-        + (V3 0   0   0.8 ^* (maxB (normal `dot` dirB) 0))
+        + (V3 0   0   0.8 ^* maxB (normal `dot` dirB) 0)
         ))
 
 lightShaded
@@ -82,7 +82,7 @@ lightShaded
 lightShaded i win fragStream = do
   eye <- getUni bEye
   let
-    litFrags = (computeLight i eye) <$> fragStream
+    litFrags = computeLight i eye <$> fragStream
 
   drawWindowColorDepth
     (const (win, def, def))
@@ -100,7 +100,7 @@ alphaWireframe win fragStream = do
         (V3 i j k) = w
         edgeFactor = minB (minB i j) k
       in
-        (V4 1 0 0 ((1.0 - edgeFactor) * 0.95))
+        V4 1 0 0 ((1.0 - edgeFactor) * 0.95)
 
   drawWindowColor
      (const (win, blendAlpha))
@@ -125,7 +125,7 @@ edgy win fragStream = do
 
   drawWindowColor
    (const (win, blendAlpha))
-   (wireFrags)
+   wireFrags
 
 edges
   :: forall os . Window os RGBAFloat Depth

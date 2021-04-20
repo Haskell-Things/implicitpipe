@@ -1,6 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE PackageImports #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -118,7 +117,7 @@ viewer config@ViewerConf{..} = do
 
       fragmentStream <-
             do
-              guard' (shaderEnvFlatNormals)
+              guard' shaderEnvFlatNormals
               rasterize
                 shaderEnvRasterOptions
                 (proj Flat <$> primitiveStream)
@@ -198,8 +197,8 @@ loop win shader triangles unionBuffers@Uniforms{..} aTime eventChan renderChan v
 
       projMat = perspective (pi/2) (fromIntegral windowWidth / fromIntegral windowHeight) 0.1 100
 
-      eye = (V3 0 (-1) 1)
-      lookAtPoint = (V3 0 0 0)
+      eye = V3 0 (-1) 1
+      lookAtPoint = V3 0 0 0
 
       cameraMatrix :: M44 Float
       cameraMatrix =
@@ -278,8 +277,8 @@ updateViewerState win chan oldState = do
                       V2 cursorX cursorY = lastCursorPos
                     in
                       s { lastCursorPos = x
-                        , camPitch = ((realToFrac $ cursorY - oldCursorY) / 100 + camPitch) `mod''` (2*pi)
-                        , camYaw = ((realToFrac $ cursorX - oldCursorX) / 100 + camYaw) `mod''` (2*pi)
+                        , camPitch = (realToFrac (cursorY - oldCursorY) / 100 + camPitch) `mod''` (2*pi)
+                        , camYaw = (realToFrac (cursorX - oldCursorX) / 100 + camYaw) `mod''` (2*pi)
                         }
             LeftMouse x
               -> s { camRotating = x }
@@ -311,7 +310,7 @@ updateViewerState win chan oldState = do
                                           else -1
       animTime =
         if animationRunning
-             then animationTime + (faster $ animDirection * animationStep)
+             then animationTime + faster (animDirection * animationStep)
              else animationTime
 
       nextOutOfBounds =

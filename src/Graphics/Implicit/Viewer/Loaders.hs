@@ -21,7 +21,6 @@ import Graphics.Implicit.Export.GL
 import Graphics.Implicit.ExtOpenScad.Definitions
 import Graphics.Implicit.Primitives (getBox)
 import Graphics.Implicit.Viewer.Types
-import Linear (V3 (V3))
 
 import qualified Language.Haskell.Interpreter as Hint
 import qualified System.Directory
@@ -185,7 +184,7 @@ renderObjToChan o resolution renderChan = do
   unless (l == 0) $ do
     atomically $ writeTChan renderChan (l, objScale, mesh)
   after <- getCurrentTime
-  putStrLn $ "Done in " ++ (show $ diffUTCTime after now)
+  putStrLn $ "Done in " ++ show (diffUTCTime after now)
 
   when (l == 0) $ putStrLn "Mesh empty"
 
@@ -200,6 +199,6 @@ runAnimation f initialResolution renderChan aTime = void $ async $ forever $ do
   isE <- atomically $ isEmptyTChan renderChan
   case isE of
     True -> do
-      t <- atomically $ readTVar aTime
+      t <- readTVarIO aTime
       renderObjToChan (f t) initialResolution renderChan
     False -> threadDelay 100000
