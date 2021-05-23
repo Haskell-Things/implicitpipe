@@ -1,6 +1,6 @@
 # implicitpipe
 
-[![IRC](https://img.shields.io/badge/irc.freenode.net-%23ImplicitCAD-blue.svg)](https://freenode.net/)
+[![IRC](https://img.shields.io/badge/irc.libera.chat-%23ImplicitCAD-blue.svg)](https://libera.chat/)
 
 OpenGL 3D viewer for [ImplicitCAD](https://github.com/colah/ImplicitCAD).
 
