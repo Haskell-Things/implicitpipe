@@ -1,7 +1,7 @@
-{-# LANGUAGE Arrows #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE Arrows #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 -- due to getUni which explodes when given signature
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
@@ -56,7 +56,7 @@ getUni which = getUniform (\state -> (which $ shaderEnvUniforms state, 0))
 
 data ShaderEnvironment os = ShaderEnvironment
   { shaderEnvTriangles     :: PrimitiveArray Triangles PrimitiveBuffer
-  , shaderEnvRasterOptions :: (Side, ViewPort, DepthRange)
+  , shaderEnvRasterOptions :: (Side, PolygonMode, ViewPort, DepthRange)
   , shaderEnvFragID        :: Int -- fragment shader ID
   , shaderEnvUniforms      :: Uniforms os
   , shaderEnvFlatNormals   :: Bool

@@ -20,8 +20,8 @@ library
                      , directory
                      , filepath
                      , fsnotify
-                     , GPipe >=2.2
-                     , GPipe-GLFW >=1.4
+                     , GPipe-Core >= 0.2.3
+                     , GPipe-GLFW4 >= 2.0.0
                      , GLFW-b
                      , hint
                      , implicit

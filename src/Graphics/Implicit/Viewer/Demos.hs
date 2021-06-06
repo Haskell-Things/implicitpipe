@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
 module Graphics.Implicit.Viewer.Demos where
 
-import Linear
 import Graphics.Implicit
 import Graphics.Implicit.Primitives
 
@@ -22,8 +21,8 @@ demoRotatingAnim t =
 ontop :: SymbolicObj3 -> SymbolicObj3 -> SymbolicObj3
 ontop a b = union [ translate (V3 0 0 z) a, b ]
   where z = let
-                ((V3 _ _ aBottom), _) = getBox a
-                (_, (V3 _ _ bTop)) = getBox b
+                (V3 _ _ aBottom, _) = getBox a
+                (_, V3 _ _ bTop) = getBox b
             in bTop - aBottom
 
 demoTranslatedSymbolic :: SymbolicObj3

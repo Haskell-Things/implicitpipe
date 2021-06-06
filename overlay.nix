@@ -1,20 +1,17 @@
 (self: super:
 let
   gpipeSrc = super.fetchFromGitHub {
-    # fork due to resizeBuffer PR https://github.com/tobbebex/GPipe-Core/pull/76
-    # owner = "tobbebex";
-    owner = "sorki";
+    owner = "homectl";
     repo = "GPipe-Core";
-    rev = "86a7b29014e7ebfb24ac17d5afcd877a38a1fbd5";
-    sha256 = "08mvgygiq6i6vfjak4pq3cz1w3scvwv10igxn4vz6mna5fq6mnxz";
+    rev = "273f58fc53e8560ed72f0e62867b96e4afec92c3";
+    sha256 = "06lm8mj7d5lpi5f8cgas4rx1xq5wagb9n3j7cfip2zckwrq7rl5j";
   };
 
-  # until 2.0
   gpipeGlfwSrc = super.fetchFromGitHub {
-     owner = "plredmond";
-     repo = "GPipe-GLFW";
-     rev = "83d26eb7b41d67f5ac6fbd1bd8758d72c660e039";
-     sha256 = "0fg60amvp2v37cwmvfa0n7if1ppisjjh3bknmrr17m7fbfbbxlhq";
+     owner = "homectl";
+     repo = "GPipe-GLFW4";
+     rev = "999b55e2cf78c052884f5ec9ab154e3cc399ba7a";
+     sha256 = "09182qs5cf5glhxavcp24f74f1kkk5pfdwmah2rg31ggz1wa5m81";
   };
 in
   ({
@@ -25,12 +22,12 @@ in
            GPipe = hsuper.callCabal2nix "GPipe" "${gpipeSrc}/GPipe-Core" {};
            GPipe-GLFW = hsuper.callCabal2nix "GPipe-GLFW" ("${gpipeGlfwSrc}/GPipe-GLFW") {};
 
-           # until > 3.0.2 is out
+           # until > 3.0 is out
            implicit = hsuper.callCabal2nix "implicit" (super.fetchFromGitHub {
               owner = "colah";
               repo = "ImplicitCAD";
-              rev = "8dff5531cdc4d9ed32bf958e3945b4a3a0ef3774";
-              sha256 = "0bp797a9wlpyw2d6b4csz5ikqq3wy1qry0iabl7r7axjrhvnfp56";
+              rev = "67ab4ccc046e255e36c49e40ae2ceedda6a49400";
+              sha256 = "1w4xjdxgc9mfjm681pdnhzcxvppvmn9p381gpfl30b8rvbgzjj4d";
            }) {};
         });
       });
