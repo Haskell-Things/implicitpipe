@@ -13,8 +13,8 @@ let
   gpipeGlfwSrc = super.fetchFromGitHub {
      owner = "plredmond";
      repo = "GPipe-GLFW";
-     rev = "83d26eb7b41d67f5ac6fbd1bd8758d72c660e039";
-     sha256 = "0fg60amvp2v37cwmvfa0n7if1ppisjjh3bknmrr17m7fbfbbxlhq";
+     rev = "3d7e91a20a80fe31e910884b151ebe4d26e8274e";
+     sha256 = "0rx00mxlz6jlipx19h271mbnp8l9kzgm3dhwprwww4gf8g43r7vd";
   };
 in
   ({
@@ -25,12 +25,12 @@ in
            GPipe = hsuper.callCabal2nix "GPipe" "${gpipeSrc}/GPipe-Core" {};
            GPipe-GLFW = hsuper.callCabal2nix "GPipe-GLFW" ("${gpipeGlfwSrc}/GPipe-GLFW") {};
 
-           # until > 3.0.2 is out
+           # until > 4.0.0 is out
            implicit = hsuper.callCabal2nix "implicit" (super.fetchFromGitHub {
-              owner = "colah";
+              owner = "Haskell-Things";
               repo = "ImplicitCAD";
-              rev = "8dff5531cdc4d9ed32bf958e3945b4a3a0ef3774";
-              sha256 = "0bp797a9wlpyw2d6b4csz5ikqq3wy1qry0iabl7r7axjrhvnfp56";
+              rev = "ae794b901e9677593815fad741d87ff56846562d";
+              sha256 = "0q8bj3jysgl7kfivrag8g6yx58n5rxf69qsc3lw43941lamaxpda";
            }) {};
         });
       });
