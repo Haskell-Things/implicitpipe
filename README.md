@@ -137,4 +137,4 @@ to use composable `Animation` wrapper similar to
 
 ### `demoLetterI` with smoothed normals
 
-[![smoothed demo letter](./img/i_smoothed_thumb.png)](https://raw.githubusercontent.com/sorki/implicitpipe/master/img/i_smoothed_thumb.png)
+[![smoothed demo letter](./img/i_smoothed_thumb.png)](https://raw.githubusercontent.com/sorki/implicitpipe/master/img/i_smoothed.png)

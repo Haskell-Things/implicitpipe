@@ -16,7 +16,6 @@ import Data.List (isSuffixOf)
 import Data.Time (getCurrentTime, diffUTCTime)
 import Data.Typeable (Typeable)
 
-import Linear (V3(V3))
 import Graphics.Implicit
 import Graphics.Implicit.Primitives (getBox)
 import Graphics.Implicit.ExtOpenScad.Definitions
