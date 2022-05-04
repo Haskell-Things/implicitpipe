@@ -18,7 +18,7 @@ duration (Animation d _) = d
 mkAnimation :: Duration -> (Time -> a) -> Animation a
 mkAnimation = Animation
 
-instance (Semigroup a) => Semigroup (Animation a) where
+instance Semigroup (Animation a) where
   (Animation d1 a1) <> (Animation d2 a2) = Animation (d1 + d2)
     $ \t -> if t < d1/d
        then a1 (t * d/d1)
