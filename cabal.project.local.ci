@@ -1,11 +1,10 @@
 -- NOTE: having implicit listed here breaks hint
 -- see https://github.com/Haskell-Things/implicitpipe/issues/2
--- but it is required for CI now
--- until 0.4
-source-repository-package
-    type: git
-    location: https://github.com/Haskell-Things/ImplicitCAD
-    tag: ae794b901e9677593815fad741d87ff56846562d
+--
+-- source-repository-package
+--     type: git
+--     location: https://github.com/Haskell-Things/ImplicitCAD
+--     tag: ae794b901e9677593815fad741d87ff56846562d
 
 -- fork due to resizeBuffer PR https://github.com/tobbebex/GPipe-Core/pull/76
 source-repository-package

@@ -1,4 +1,4 @@
-{ rev ? "c542baa0c894796c92a8173dead027f3b952c22e"
+{ rev ? "7c6985653708c5fade76d2014824ff333b0a07b2"
 , overlays ? [ (import ./overlay.nix) ]
 , pkgs ?
     if ((rev == "") || (rev == "default") || (rev == "local"))
