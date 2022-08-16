@@ -45,6 +45,7 @@ runUpdater modFileRel initialResolution renderChan = void $ do
     eventFilter :: FSNotify.ActionPredicate
     eventFilter (FSNotify.Modified fp _ _)
            | ".hs" `isSuffixOf` fp = True
+           | ".scad" `isSuffixOf` fp = True
            | ".escad" `isSuffixOf` fp = True
     eventFilter _ = False
 
