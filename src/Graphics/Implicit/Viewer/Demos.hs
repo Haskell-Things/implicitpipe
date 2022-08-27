@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-type-defaults #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Graphics.Implicit.Viewer.Demos where
 
 import Linear
@@ -95,7 +96,7 @@ sph = implicit (\(V2 x y) -> 10*x^(2 :: Int) + y^(2 :: Int) - 1) (pure (-10), (p
 --    (sphere (sqrt (3 * (n/2) ^2) ))
 -- @
 mixed
-  :: (Object obj vec, Semigroup obj)
+  :: (Object obj f Double, Semigroup obj)
   => ℝ
   -> obj
   -> obj

@@ -25,13 +25,13 @@ in
            GPipe = hsuper.callCabal2nix "GPipe" "${gpipeSrc}/GPipe-Core" {};
            GPipe-GLFW = hsuper.callCabal2nix "GPipe-GLFW" ("${gpipeGlfwSrc}/GPipe-GLFW") {};
 
-           # until > 4.0.0 is out
-           implicit = hsuper.callCabal2nix "implicit" (super.fetchFromGitHub {
-              owner = "Haskell-Things";
-              repo = "ImplicitCAD";
-              rev = "ae794b901e9677593815fad741d87ff56846562d";
-              sha256 = "0q8bj3jysgl7kfivrag8g6yx58n5rxf69qsc3lw43941lamaxpda";
-           }) {};
+           # for development
+           # implicit = hsuper.callCabal2nix "implicit" (super.fetchFromGitHub {
+           #    owner = "Haskell-Things";
+           #    repo = "ImplicitCAD";
+           #    rev = "ae794b901e9677593815fad741d87ff56846562d";
+           #    sha256 = "0q8bj3jysgl7kfivrag8g6yx58n5rxf69qsc3lw43941lamaxpda";
+           # }) {};
         });
       });
   })
