@@ -52,7 +52,7 @@ runUpdater modFileRel initialResolution renderChan = void $ do
     eventHandler (FSNotify.Modified fp _ _) = atomically $ writeTChan watchEvent fp
     eventHandler _ = return ()
 
-  void $ async $ FSNotify.withManagerConf (FSNotify.defaultConfig { FSNotify.confDebounce = FSNotify.Debounce 1 }) $ \mgr -> do
+  void $ async $ FSNotify.withManagerConf FSNotify.defaultConfig $ \mgr -> do
     void $ FSNotify.watchDir
       mgr
       (System.FilePath.takeDirectory modFile)

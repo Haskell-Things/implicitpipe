@@ -1,10 +1,5 @@
-{ rev ? "7c6985653708c5fade76d2014824ff333b0a07b2"
-, overlays ? [ (import ./overlay.nix) ]
-, pkgs ?
-    if ((rev == "") || (rev == "default") || (rev == "local"))
-      then import <nixpkgs> { inherit overlays; }
-      # Do not guard with hash, so the project is able to use current channels (rolling `rev`) of Nixpkgs
-      else import (builtins.fetchTarball "https://github.com/NixOS/nixpkgs/archive/${rev}.tar.gz") { inherit overlays; }
+{ overlays ? [ (import ./overlay.nix) ]
+, pkgs ? import <nixpkgs> { inherit overlays; }
 }:
 
 let
