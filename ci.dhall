@@ -1,18 +1,19 @@
 let haskellCi =
-      https://raw.githubusercontent.com/sorki/github-actions-dhall/pending/haskell-ci.dhall
+      https://raw.githubusercontent.com/sorki/github-actions-dhall/main/haskell-ci.dhall
+
+let steps = haskellCi.defaultCabalSteps
 
 in    haskellCi.generalCi
-        (   [ haskellCi.BuildStep.Name
-                { name = "Native dependencies"
-                , run =
-                    "sudo apt install libgmp-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev"
-                }
-            ]
-          # haskellCi.matrixSteps
+        ( steps
+          with extraSteps.pre
+               =
+                steps.extraSteps.pre
+              # [ haskellCi.BuildStep.Name
+                    { name = "Native dependencies"
+                    , run =
+                        "sudo apt install libgmp-dev libgl1-mesa-dev libxcursor-dev libxi-dev libxinerama-dev libxrandr-dev libxxf86vm-dev"
+                    }
+                ]
         )
-        ( Some
-            { ghc = [ haskellCi.GHC.GHC902, haskellCi.GHC.GHC8107 ]
-            , cabal = [ haskellCi.Cabal.Cabal34 ]
-            }
-        )
+        (haskellCi.DhallMatrix::{=} with ghc = haskellCi.defaultGHC3)
     : haskellCi.CI.Type

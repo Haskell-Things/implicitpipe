@@ -1,8 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Graphics.Implicit.Viewer.Loaders where
 
@@ -10,22 +10,22 @@ import Control.Concurrent
 import Control.Concurrent.Async
 import Control.Concurrent.STM
 import Control.Monad
-import Control.Monad.Trans.Maybe (runMaybeT, MaybeT(..))
+import Control.Monad.Trans.Maybe (MaybeT (..), runMaybeT)
 import Data.Foldable (asum)
 import Data.List (isSuffixOf)
-import Data.Time (getCurrentTime, diffUTCTime)
+import Data.Time (diffUTCTime, getCurrentTime)
 import Data.Typeable (Typeable)
 
 import Graphics.Implicit
-import Graphics.Implicit.Primitives (getBox)
-import Graphics.Implicit.ExtOpenScad.Definitions
-import Graphics.Implicit.Viewer.Types
 import Graphics.Implicit.Export.GL
+import Graphics.Implicit.ExtOpenScad.Definitions
+import Graphics.Implicit.Primitives (getBox)
+import Graphics.Implicit.Viewer.Types
 
 import qualified Language.Haskell.Interpreter as Hint
+import qualified System.Directory
 import qualified System.FSNotify as FSNotify
 import qualified System.FilePath
-import qualified System.Directory
 
 -- | Run fsnotify based directory watcher for .hs and .escad files
 -- and run appropriate loader based on the file extension.
@@ -52,7 +52,7 @@ runUpdater modFileRel initialResolution renderChan = void $ do
     eventHandler (FSNotify.Modified fp _ _) = atomically $ writeTChan watchEvent fp
     eventHandler _ = return ()
 
-  void $ async $ FSNotify.withManagerConf (FSNotify.defaultConfig { FSNotify.confDebounce = FSNotify.Debounce 1 }) $ \mgr -> do
+  void $ async $ FSNotify.withManagerConf FSNotify.defaultConfig $ \mgr -> do
     void $ FSNotify.watchDir
       mgr
       (System.FilePath.takeDirectory modFile)
@@ -102,7 +102,7 @@ loadViaHint modFile initialResolution renderChan = do
 
     mo <- eval @SymbolicObj3 modFile "obj"
     case mo of
-      Right o -> renderObjToChan o resolution renderChan
+      Right o                         -> renderObjToChan o resolution renderChan
       Left (Hint.WontCompile ghcErrs) -> forM_ ghcErrs $ putStrLn . Hint.errMsg
       Left (Hint.UnknownError str)    -> putStrLn $ "Unknown error: " ++ str
       Left (Hint.NotAllowed str)      -> putStrLn $ "Not allowed: " ++ str
@@ -127,7 +127,7 @@ evalMay :: forall t. Typeable t
 evalMay modFile s = toMaybe $ eval modFile s
   where toMaybe a = a >>= return . \case
           Right x -> Just x
-          _ -> Nothing
+          _       -> Nothing
 
 loadViaEscad
   :: FilePath
@@ -154,7 +154,7 @@ loadViaEscad modFile initialResolution renderChan = do
 
   let res = case lookupVarIn "$res" varLookup of
         Just (ONum n) -> Fixed n
-        _ -> initialResolution
+        _             -> initialResolution
 
   renderObjToChan
     (unionR 0 ((extrude (unionR 0 objs2) 1):objs3))
@@ -185,7 +185,7 @@ renderObjToChan o resolution renderChan = do
   unless (l == 0) $ do
     atomically $ writeTChan renderChan (l, objScale, mesh)
   after <- getCurrentTime
-  putStrLn $ "Done in " ++ (show $ diffUTCTime after now)
+  putStrLn $ "Done in " ++ show (diffUTCTime after now)
 
   when (l == 0) $ putStrLn "Mesh empty"
 
@@ -200,6 +200,6 @@ runAnimation f initialResolution renderChan aTime = void $ async $ forever $ do
   isE <- atomically $ isEmptyTChan renderChan
   case isE of
     True -> do
-      t <- atomically $ readTVar aTime
+      t <- readTVarIO aTime
       renderObjToChan (f t) initialResolution renderChan
     False -> threadDelay 100000

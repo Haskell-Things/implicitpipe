@@ -22,8 +22,8 @@ in
       overrides = super.lib.composeExtensions (old.overrides or (_: _: {}))
         (hself: hsuper: {
            #GPipe = super.haskell.lib.doJailbreak hsuper.GPipe;
-           GPipe = hsuper.callCabal2nix "GPipe" "${gpipeSrc}/GPipe-Core" {};
-           GPipe-GLFW = hsuper.callCabal2nix "GPipe-GLFW" ("${gpipeGlfwSrc}/GPipe-GLFW") {};
+           GPipe = super.haskell.lib.doJailbreak (hsuper.callCabal2nix "GPipe" "${gpipeSrc}/GPipe-Core" {});
+           GPipe-GLFW = super.haskell.lib.doJailbreak (hsuper.callCabal2nix "GPipe-GLFW" ("${gpipeGlfwSrc}/GPipe-GLFW") {});
 
            # for development
            # implicit = hsuper.callCabal2nix "implicit" (super.fetchFromGitHub {

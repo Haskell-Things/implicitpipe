@@ -19,7 +19,7 @@ library
                      , data-default
                      , directory
                      , filepath
-                     , fsnotify
+                     , fsnotify >= 0.4
                      , GPipe >= 2.2
                      , GPipe-GLFW >= 1.4
                      , GLFW-b
